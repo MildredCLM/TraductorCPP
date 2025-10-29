@@ -1,0 +1,30 @@
+if
+for
+int
+hola
+var
+20
+-40
+1.5
+-50.4
++
+-
+{}
+[]
+()
+;
+,
+&&
+// comentario 1 linea
+/* comentario multiple */
+"soy un string"
+'a'
+30>10
+30++
+0var
+1.
+123abc
+5b1
+"abc
+'z
+int var = 10;

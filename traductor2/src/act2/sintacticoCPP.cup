@@ -1,0 +1,59 @@
+package act2;
+import java_cup.runtime.*;
+import java.io.*;
+
+action code {:
+
+    public void report_error(String mensaje, Symbol token){
+    System.out.println("Error en la linea: "+token.left +", columna: "+token.right + " -> mensaje: "+mensaje);
+    }
+    public void report_fatal_error(String mensaje, Symbol token){
+        report_error(mensaje, token);
+        System.exit(1);
+    }
+:}
+
+/*PALABRAS RESERVADAS */
+terminal INT,LONG, FLOAT, DOUBLE, CHAR, BOOL, VOID, STRING;
+terminal IF, ELSE, SWITCH,FOR, WHILE, DO, BREAK, CONTINUE, RETURN, TRY, CATCH;
+
+/* OPERADORES*/
+terminal ASIGNACION,A_SUMA, A_RESTA,A_MODULO, A_MULTIPLICACION, A_DIVISION;
+terminal SUMA, RESTA, MULTIPLICACION, DIVISION, MODULO;
+terminal INCREMENTO, DECREMENTO;
+terminal IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+terminal AND, OR, NOT;
+
+/* SIMBOLOS*/
+terminal COMA, PUNTOYCOMA;
+terminal LLAVE_APERTURA, LLAVE_CIERRE;
+terminal PARENTESIS_APERTURA, PARENTESIS_CIERRE;
+terminal CORCHETE_APERTURA, CORCHETE_CIERRE;
+terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
+terminal LITERAL_CADENA, LITERAL_CARACTER;
+
+/* EXPRESIONES REGULARES */
+terminal ID, CADENA, CARACTER, BOOLEAN, DECIMAL, ENTERO;
+
+/* == NON TERMINAL === palabras de referencia a la gramatica===*/ 
+non terminal declaraciones, dec_variables, tipo_dato, valor;
+
+/*REGLAS GRAMATICALES*/
+start with declaraciones;
+
+declaraciones::= dec_variables;
+
+dec_variables::= tipo_dato ID ASIGNACION valor PUNTOYCOMA
+                |tipo_dato ID PUNTOYCOMA
+                | tipo_dato ID ASIGNACION valor error {: 
+                    report_error("Se esperaba ';' al final de la declaración", null); 
+                    :} PUNTOYCOMA
+                | tipo_dato ID error {: 
+                     report_error("Se esperaba ';' al final de la declaración", null); 
+                    :} PUNTOYCOMA
+                ;
+
+tipo_dato::= INT | LONG | FLOAT | DOUBLE | CHAR | BOOL | VOID | STRING;
+
+valor::= ENTERO | DECIMAL | CADENA | CARACTER | BOOLEAN;
+

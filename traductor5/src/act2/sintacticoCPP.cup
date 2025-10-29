@@ -1,0 +1,157 @@
+package act2;
+import java_cup.runtime.*;
+import java.io.*;
+
+
+parser code {:
+    protected Symbol lastErrorToken;
+
+    public void report_fatal_error(String mensaje, Object informacion) {
+        report_error(mensaje, informacion);
+        // System.exit(1); // Se comenta para permitir que el parser intente recuperarse
+    }
+
+    public void syntax_error(Symbol token_actual) {
+      this.lastErrorToken = token_actual;
+        String mensajeError = "Error de sintaxis. ";
+        if (token_actual != null && token_actual.value != null) {
+            mensajeError += "Token inesperado: '" + token_actual.value + "'.";
+        }
+        
+        System.err.println(mensajeError + " En la línea: " + (token_actual.left + 1) + ", Columna: " + (token_actual.right + 1));
+    }
+    public void report_error(String mensaje, Object informacion) {
+        if (informacion instanceof Symbol) {
+            Symbol s = ((Symbol) informacion);
+            
+        
+            if (s.left >= 0 && s.right >= 0) {
+                syntax_error(s);
+                System.err.println(mensaje + " Cerca de la línea: " + (s.left + 1) + ", Columna: " + (s.right + 1));
+                return;
+            }
+        }
+        System.err.println(mensaje);
+    }
+:};
+
+/* PALABRAS RESERVADAS */
+terminal INT,LONG, FLOAT, DOUBLE, CHAR, BOOL, VOID, STRING;
+terminal IF, ELSE, SWITCH,FOR, WHILE, DO, BREAK, CONTINUE, RETURN, TRY, CATCH;
+
+/* OPERADORES*/
+terminal ASIGNACION,A_SUMA, A_RESTA,A_MODULO, A_MULTIPLICACION, A_DIVISION;
+terminal SUMA, RESTA, MULTIPLICACION, DIVISION, MODULO;
+terminal INCREMENTO, DECREMENTO;
+terminal IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+terminal AND, OR, NOT;
+
+/* SIMBOLOS*/
+terminal COMA, PUNTOYCOMA;
+terminal LLAVE_APERTURA, LLAVE_CIERRE;
+terminal PARENTESIS_APERTURA, PARENTESIS_CIERRE;
+terminal CORCHETE_APERTURA, CORCHETE_CIERRE;
+terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
+terminal LITERAL_CADENA, LITERAL_CARACTER;
+
+/* EXPRESIONES REGULARES */
+terminal ID, CADENA, CARACTER, BOOLEAN, DECIMAL, ENTERO;
+
+terminal ERROR; /* Para errores léxicos de JFlex */
+
+
+/* == NON TERMINAL === palabras de referencia a la gramatica===*/ 
+non terminal programa, declaraciones, dec_variables, tipo_dato;
+non terminal expresion;
+
+
+/* PRECEDENCIA Y ASOCIATIVIDAD DE OPERADORES */
+precedence left OR;
+precedence left AND;
+precedence nonassoc IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+precedence left SUMA, RESTA;
+precedence left MULTIPLICACION, DIVISION, MODULO;
+precedence right NOT;
+
+
+/* REGLAS GRAMATICALES */
+start with programa;
+
+programa ::= declaraciones;
+
+declaraciones::=  declaraciones dec_variables
+                | dec_variables
+                /* REGLA DE RECUPERACIÓN DE ERRORES GENERAL */
+                /* Si encuentra un error, consume tokens hasta el siguiente ';' */
+                | declaraciones error PUNTOYCOMA
+                 {: System.err.println("-> Error en la declaración anterior. Intentando continuar el análisis..."); :}
+                ;
+
+dec_variables::= tipo_dato ID ASIGNACION expresion PUNTOYCOMA
+                 {:System.out.println("->Declaración con asignación.");:}
+               | tipo_dato ID PUNTOYCOMA
+                 {:System.out.println("->Declaración simple.");:}
+               
+                | tipo_dato ID ASIGNACION expresion:e error
+                 {:
+                     // ERROR ES UN FINAL DE ARCHIVO INESPERADO
+                     if (parser.lastErrorToken != null && parser.lastErrorToken.sym == sym.EOF) {
+                         parser.report_error("Error de sintaxis: Se esperaba un punto y coma (;) al final de la declaración.", e);
+                     }
+                 :}
+            
+             | tipo_dato ID:i error
+                 {:
+                     if (parser.lastErrorToken != null && parser.lastErrorToken.sym == sym.EOF) {
+                         parser.report_error("Error de sintaxis: Se esperaba un punto y coma (;) al final de la declaración.", i);
+                     }
+                 :}
+
+             | error ID PUNTOYCOMA
+                 {: parser.report_error("Error de sintaxis: Se esperaba un tipo de dato (BYTE, INT, etc.) al inicio de la declaración.", null); :}
+             ;
+
+               /*
+               | tipo_dato ID ASIGNACION expresion:e error
+                 {: parser.report_error("Error de sintaxis: se esperaba un punto y coma (;)", e);:}
+               | tipo_dato ID:i error
+                 {: parser.report_error("Error de sintaxis: se esperaba un punto y coma (;)", i);:}
+               |error ID PUNTOYCOMA
+                {: parser.report_error("Error de sintaxis: Se esperaba un tipo de dato (BYTE, INT, etc.) al inicio de la declaración.", null); :}
+               
+               ;
+
+               */
+
+tipo_dato::= INT | LONG | FLOAT | DOUBLE | CHAR | BOOL | VOID | STRING;
+
+expresion ::=
+    /* Casos Base (los elementos más pequeños) */
+      ENTERO
+    | DECIMAL
+    | CADENA
+    | CARACTER
+    | BOOLEAN
+    | ID
+     /* Agrupacion */
+    | PARENTESIS_APERTURA expresion PARENTESIS_CIERRE
+    | LLAVE_APERTURA expresion LLAVE_CIERRE
+    | CORCHETE_APERTURA expresion CORCHETE_CIERRE
+    /* Operadores Aritméticos */
+    | expresion SUMA expresion
+    | expresion RESTA expresion
+    | expresion MULTIPLICACION expresion
+    | expresion DIVISION expresion
+    | expresion MODULO expresion
+    /* Operadores Relacionales */
+    | expresion IGUAL expresion
+    | expresion DIFERENCIA expresion
+    | expresion MAYOR expresion
+    | expresion MENOR expresion
+    | expresion MAYOR_IGUAL expresion
+    | expresion MENOR_IGUAL expresion
+    /* Operadores Lógicos */
+    | expresion AND expresion
+    | expresion OR expresion
+    | NOT expresion
+    ;

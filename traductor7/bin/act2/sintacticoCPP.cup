@@ -1,0 +1,200 @@
+/*
+    LOPEZ MANCILLA MILDRED CRISTINA
+    SANCHEZ CARRILLO ALAN OSWALDO
+    SANDOVAL RAMIREZ OSCAR EMILIO
+    C++
+*/
+
+package act2;
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+
+    protected Symbol lastErrorToken;
+    public void report_fatal_error(String mensaje, Object informacion) { report_error(mensaje, informacion); }
+    public void syntax_error(Symbol token_actual) {
+        this.lastErrorToken = token_actual;
+        String mensajeError = "Error de sintaxis. ";
+        if (token_actual != null && token_actual.value != null) {
+            mensajeError += "Token inesperado: '" + token_actual.value + "'.";
+        }
+        System.err.println(mensajeError + " En la línea: " + (token_actual.left + 1) + ", Columna: " + (token_actual.right + 1));
+    }
+    public void report_error(String mensaje, Object informacion) {
+        if (informacion instanceof Symbol) {
+            Symbol s = ((Symbol) informacion);
+            if (s.left >= 0 && s.right >= 0) {
+                System.err.println(mensaje + " Cerca de la línea: " + (s.left + 1) + ", Columna: " + (s.right + 1));
+                return;
+            }
+        }
+        System.err.println(mensaje);
+    }
+:};
+
+/* === TERMINALES === */
+terminal INT,LONG, FLOAT, DOUBLE, CHAR, BOOL, VOID, STRING;
+terminal IF, ELSE, SWITCH,FOR, WHILE, DO, BREAK, CONTINUE, RETURN, TRY, CATCH;
+terminal ASIGNACION,A_SUMA, A_RESTA,A_MODULO, A_MULTIPLICACION, A_DIVISION;
+terminal SUMA, RESTA, MULTIPLICACION, DIVISION, MODULO;
+terminal INCREMENTO, DECREMENTO;
+terminal IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+terminal AND, OR, NOT;
+terminal COMA, PUNTOYCOMA;
+terminal LLAVE_APERTURA, LLAVE_CIERRE;
+terminal PARENTESIS_APERTURA, PARENTESIS_CIERRE;
+terminal CORCHETE_APERTURA, CORCHETE_CIERRE;
+terminal LITERAL_CADENA, LITERAL_CARACTER;
+terminal ID, CADENA, CARACTER, BOOLEAN, DECIMAL, ENTERO;
+terminal ERROR;
+terminal CLASS;
+terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
+terminal PRIVATE, PUBLIC, PROTECTED, STATIC, CASE, DEFAULT, DOS_PUNTOS;
+
+/* === NO TERMINALES  === */
+non terminal programa, lista_declaraciones, declaracion;
+non terminal clase, cuerpo_clase, lista_miembros, miembro;
+non terminal declaracion_metodo, parametros, lista_parametros, parametro;
+non terminal declaracion_variable, lista_ids_con_asignacion, id_con_asignacion_opcional;
+non terminal tipo, cuerpo_metodo, lista_sentencias, sentencia;
+non terminal expresion, lvalue, asignacion_expr;
+non terminal sentencia_asignacion, sentencia_condicional, sentencia_iterativa;
+non terminal for_init, for_condicion, for_actualizacion;
+non terminal declaracion_miembro;
+
+/* === PRECEDENCIA  === */
+precedence right ASIGNACION, A_SUMA, A_RESTA, A_MODULO, A_MULTIPLICACION, A_DIVISION;
+precedence left OR;
+precedence left AND;
+precedence nonassoc IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+precedence left SUMA, RESTA;
+precedence left MULTIPLICACION, DIVISION, MODULO;
+precedence right INCREMENTO, DECREMENTO, NOT;
+precedence left ELSE; 
+
+/* === REGLAS GRAMATICALES  === */
+start with programa;
+
+programa ::= lista_declaraciones  ;
+
+lista_declaraciones ::= lista_declaraciones declaracion | declaracion ;
+
+/* Una declaración a nivel global o dentro de una clase puede ser una clase, un método o variables.*/
+declaracion ::= clase
+              | declaracion_variable PUNTOYCOMA
+              ;
+
+// REGLAS PARA CLASES Y MÉTODOS 
+clase ::= CLASS ID LLAVE_APERTURA cuerpo_clase LLAVE_CIERRE
+          {: System.out.println("-> Se reconoció una clase."); :}
+          ;
+
+cuerpo_clase ::= cuerpo_clase declaracion_miembro
+                | /* empty */ 
+                ;
+
+//*lista_miembros ::= lista_miembros miembro | miembro ;*//
+
+declaracion_miembro ::= declaracion_metodo
+                        |declaracion_variable
+                        ;
+
+declaracion_metodo ::= tipo ID PARENTESIS_APERTURA parametros PARENTESIS_CIERRE LLAVE_APERTURA cuerpo_metodo LLAVE_CIERRE
+                     {: System.out.println("-> Se reconoció una función/método."); :}
+                     ;
+
+parametros ::= lista_parametros 
+            | /* empty */ 
+            ;
+
+lista_parametros ::= parametro 
+                    |lista_parametros COMA parametro
+                    
+                      ;
+
+parametro ::= tipo ID;
+
+
+// REGLAS PARA VARIABLES Y TIPOS
+declaracion_variable ::= tipo lista_ids_con_asignacion PUNTOYCOMA
+                       {: System.out.println("-> Se reconoció una declaración de variable(s)."); :}
+                       ;
+
+lista_ids_con_asignacion ::= lista_ids_con_asignacion COMA id_con_asignacion_opcional
+                           | id_con_asignacion_opcional
+                           ;
+
+id_con_asignacion_opcional ::= ID
+                             | ID ASIGNACION expresion
+                             ;
+
+tipo ::= INT | LONG | FLOAT | DOUBLE | CHAR | BOOL | VOID | STRING | ID;
+
+// REGLAS PARA SENTENCIAS Y BLOQUES
+cuerpo_metodo ::= LLAVE_APERTURA lista_sentencias LLAVE_CIERRE
+                | LLAVE_APERTURA LLAVE_CIERRE
+                ;
+
+lista_sentencias ::= lista_sentencias sentencia | sentencia ;
+
+sentencia ::= declaracion_variable PUNTOYCOMA
+            | sentencia_asignacion
+            | sentencia_condicional
+            | sentencia_iterativa
+            | cuerpo_metodo
+            | PUNTOYCOMA
+            | error PUNTOYCOMA {: parser.report_error("Error de sintaxis en la sentencia.", null); :}
+            ;
+
+sentencia_asignacion ::=
+    lvalue ASIGNACION expresion PUNTOYCOMA
+  | lvalue A_SUMA expresion PUNTOYCOMA
+  | lvalue A_RESTA expresion PUNTOYCOMA
+  | lvalue A_MULTIPLICACION expresion PUNTOYCOMA
+  | lvalue A_DIVISION expresion PUNTOYCOMA
+  | lvalue A_MODULO expresion PUNTOYCOMA
+  | lvalue INCREMENTO PUNTOYCOMA
+  | lvalue DECREMENTO PUNTOYCOMA
+  | INCREMENTO lvalue PUNTOYCOMA
+  | DECREMENTO lvalue PUNTOYCOMA
+  ;
+
+sentencia_condicional ::=
+    IF PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia
+  | IF PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia ELSE sentencia
+  ;
+
+sentencia_iterativa ::=
+    WHILE PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia
+  | FOR PARENTESIS_APERTURA for_init PUNTOYCOMA for_condicion PUNTOYCOMA for_actualizacion PARENTESIS_CIERRE sentencia
+  ;
+
+for_init ::= declaracion_variable | asignacion_expr | /* empty */ ;
+for_condicion ::= expresion | /* empty */ ;
+for_actualizacion ::= asignacion_expr | /* empty */ ;
+
+// REGLAS PARA EXPRESIONES
+expresion ::=
+      ENTERO | DECIMAL | CADENA | CARACTER | BOOLEAN | ID
+    | lvalue
+    | PARENTESIS_APERTURA expresion PARENTESIS_CIERRE
+    | expresion SUMA expresion
+    | expresion RESTA expresion
+    | expresion MULTIPLICACION expresion
+    | expresion DIVISION expresion
+    | expresion MODULO expresion
+    | expresion IGUAL expresion
+    | expresion DIFERENCIA expresion
+    | expresion MAYOR expresion
+    | expresion MENOR expresion
+    | expresion MAYOR_IGUAL expresion
+    | expresion MENOR_IGUAL expresion
+    | expresion AND expresion
+    | expresion OR expresion
+    | NOT expresion
+    | asignacion_expr // Permite asignaciones dentro de expresiones
+    ;
+
+lvalue ::= ID ;
+asignacion_expr ::= lvalue ASIGNACION expresion;

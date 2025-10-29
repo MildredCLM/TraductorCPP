@@ -1,0 +1,179 @@
+/*
+    LOPEZ MANCILLA MILDRED CRISTINA
+    SANCHEZ CARRILLO ALAN OSWALDO
+    SANDOVAL RAMIREZ OSCAR EMILIO
+    C++
+*/
+
+package act2;
+import java_cup.runtime.*;
+import java.io.*;
+
+parser code {:
+    protected Symbol lastErrorToken;
+    public void report_fatal_error(String mensaje, Object informacion) { report_error(mensaje, informacion); }
+    public void syntax_error(Symbol token_actual) {
+        this.lastErrorToken = token_actual;
+        String mensajeError = "Error de sintaxis. ";
+        if (token_actual != null && token_actual.value != null) {
+            mensajeError += "Token inesperado: '" + token_actual.value + "'.";
+        }
+        System.err.println(mensajeError + " En la línea: " + (token_actual.left + 1) + ", Columna: " + (token_actual.right + 1));
+    }
+    public void report_error(String mensaje, Object informacion) {
+        if (informacion instanceof Symbol) {
+            Symbol s = ((Symbol) informacion);
+            if (s.left >= 0 && s.right >= 0) {
+                syntax_error(s);
+                System.err.println(mensaje + " Cerca de la línea: " + (s.left + 1) + ", Columna: " + (s.right + 1));
+                return;
+            }
+        }
+        System.err.println(mensaje);
+    }
+:};
+
+/* ===TERMINALES==== */
+terminal INT,LONG, FLOAT, DOUBLE, CHAR, BOOL, VOID, STRING;
+terminal IF, ELSE, SWITCH,FOR, WHILE, DO, BREAK, CONTINUE, RETURN, TRY, CATCH;
+terminal ASIGNACION,A_SUMA, A_RESTA,A_MODULO, A_MULTIPLICACION, A_DIVISION;
+terminal SUMA, RESTA, MULTIPLICACION, DIVISION, MODULO;
+terminal INCREMENTO, DECREMENTO;
+terminal IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+terminal AND, OR, NOT;
+terminal COMA, PUNTOYCOMA;
+terminal LLAVE_APERTURA, LLAVE_CIERRE;
+terminal PARENTESIS_APERTURA, PARENTESIS_CIERRE;
+terminal CORCHETE_APERTURA, CORCHETE_CIERRE;
+terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
+terminal LITERAL_CADENA, LITERAL_CARACTER;
+terminal ID, CADENA, CARACTER, BOOLEAN, DECIMAL, ENTERO;
+terminal ERROR;
+
+/* === NO TERMINALES=== */
+non terminal programa, dec_variables, tipo_dato;
+non terminal expresion;
+non terminal lista_sentencias, sentencia, bloque;
+non terminal sentencia_asignacion, sentencia_condicional, sentencia_iterativa;
+non terminal for_init, for_condicion, for_actualizacion;
+non terminal lvalue;
+non terminal asignacion_expr;
+
+/* === PRECEDENCIA Y ASOCIATIVIDAD === */
+
+precedence right ASIGNACION, A_SUMA, A_RESTA, A_MODULO, A_MULTIPLICACION, A_DIVISION;
+precedence left OR;
+precedence left AND;
+precedence nonassoc IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+precedence left SUMA, RESTA;
+precedence left MULTIPLICACION, DIVISION, MODULO;
+precedence right INCREMENTO, DECREMENTO, NOT;
+precedence left ELSE;
+precedence left IF; 
+
+/* === REGLAS GRAMATICALES === */
+start with programa;
+
+programa ::= lista_sentencias 
+            | /* empty */
+            ;
+
+lista_sentencias ::= lista_sentencias sentencia
+                   | sentencia
+                   ;
+
+sentencia ::= dec_variables {: System.out.println("-> Se reconoció una declaración."); :}
+            | sentencia_asignacion {: System.out.println("-> Se reconoció una asignación."); :}
+            | sentencia_condicional {: System.out.println("-> Se reconoció una sentencia condicional."); :}
+            | sentencia_iterativa {: System.out.println("-> Se reconoció una sentencia iterativa."); :}
+            | bloque
+            | PUNTOYCOMA // Sentencia vacía
+            | error PUNTOYCOMA
+              {: parser.report_error("Error de sintaxis en la sentencia. Se recuperó en ';'.", null); :}
+            ;
+
+bloque ::= LLAVE_APERTURA lista_sentencias LLAVE_CIERRE
+         | LLAVE_APERTURA LLAVE_CIERRE // Bloque vacío
+         ;
+
+dec_variables::= tipo_dato ID ASIGNACION expresion PUNTOYCOMA
+               | tipo_dato ID PUNTOYCOMA
+               | tipo_dato ID error
+                 {: parser.report_error("Declaración mal formada. ¿Falta un ';' o una asignación válida?", null); :}
+               | error ID PUNTOYCOMA
+                 {: parser.report_error("Se esperaba un tipo de dato al inicio de la declaración.", null); :}
+               ;
+
+tipo_dato::= INT | LONG | FLOAT | DOUBLE | CHAR | BOOL | VOID | STRING;
+
+sentencia_asignacion ::=
+    lvalue ASIGNACION expresion PUNTOYCOMA
+  | lvalue A_SUMA expresion PUNTOYCOMA
+  | lvalue A_RESTA expresion PUNTOYCOMA
+  | lvalue A_MULTIPLICACION expresion PUNTOYCOMA
+  | lvalue A_DIVISION expresion PUNTOYCOMA
+  | lvalue A_MODULO expresion PUNTOYCOMA
+  | lvalue INCREMENTO PUNTOYCOMA
+  | lvalue DECREMENTO PUNTOYCOMA
+  | INCREMENTO lvalue PUNTOYCOMA
+  | DECREMENTO lvalue PUNTOYCOMA
+  ;
+
+
+/* === ESTRUCTURA CONDICIONAL IF-ELSE === */
+sentencia_condicional ::=
+    IF PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia %prec ELSE
+  | IF PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia ELSE sentencia
+  | IF error PARENTESIS_CIERRE sentencia
+    {: parser.report_error("Expresión inválida o '(' faltante en la condición del IF.", null); :}
+  | IF PARENTESIS_APERTURA expresion error
+    {: parser.report_error("')' faltante después de la condición del IF.", null); :}
+  ;
+
+/* === ESTRUCTURAS ITERATIVAS WHILE Y FOR === */
+sentencia_iterativa ::=
+    WHILE PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia
+  | FOR PARENTESIS_APERTURA for_init PUNTOYCOMA for_condicion PUNTOYCOMA for_actualizacion PARENTESIS_CIERRE sentencia
+  | WHILE PARENTESIS_APERTURA expresion error
+    {: parser.report_error("')' faltante después de la condición del WHILE.", null); :}
+  | FOR PARENTESIS_APERTURA error PARENTESIS_CIERRE sentencia
+    {: parser.report_error("Estructura interna del FOR inválida (inicialización; condición; actualización).", null); :}
+  ;
+
+for_init ::= tipo_dato ID ASIGNACION expresion
+           | asignacion_expr
+           | /* empty */
+           ;
+for_condicion ::= expresion 
+                  | /* empty */
+            ;
+for_actualizacion ::= asignacion_expr
+                  | /* empty */
+           ;
+                  
+
+/* === REGLA DE EXPRESIONES === */
+expresion ::=
+      ENTERO | DECIMAL | CADENA | CARACTER | BOOLEAN | ID
+    | PARENTESIS_APERTURA expresion PARENTESIS_CIERRE
+    | expresion SUMA expresion
+    | expresion RESTA expresion
+    | expresion MULTIPLICACION expresion
+    | expresion DIVISION expresion
+    | expresion MODULO expresion
+    | expresion IGUAL expresion
+    | expresion DIFERENCIA expresion
+    | expresion MAYOR expresion
+    | expresion MENOR expresion
+    | expresion MAYOR_IGUAL expresion
+    | expresion MENOR_IGUAL expresion
+    | expresion AND expresion
+    | expresion OR expresion
+    | NOT expresion
+    
+    ;
+
+lvalue ::= ID
+          ;
+
+asignacion_expr ::= lvalue ASIGNACION expresion;

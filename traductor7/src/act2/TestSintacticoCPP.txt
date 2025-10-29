@@ -1,0 +1,8 @@
+class MiClase {
+    int miMetodo(int a, float b) {
+      int  a = 10;
+    }
+    void otroMetodo() {
+        int i = 0;
+    }
+}

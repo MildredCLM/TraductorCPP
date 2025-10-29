@@ -1,0 +1,145 @@
+package act2;
+import java_cup.runtime.*;
+import java.io.*;
+
+action code {:
+    // 1. ESTE ES EL MÉTODO QUE CUP LLAMA AUTOMÁTICAMENTE
+    public void syntax_error(Symbol cur_token) {
+        // 2. Simplemente llama a tu método personalizado para centralizar la lógica.
+        //    Le pasamos un mensaje genérico y el token que causó el error.
+        report_error("Error de sintaxis", cur_token);
+    }
+
+    // 3. TU MÉTODO PERSONALIZADO CON EL SWITCH (permanece igual)
+    public void report_error(String mensaje, Symbol token){
+        String mensaje_personalizado = "";
+
+        switch (token.sym) {
+            case sym.EOF:
+                mensaje_personalizado = "Error: Paréntesis o llaves desbalanceados.";
+                break;
+            case sym.SUMA:
+            case sym.RESTA:
+            case sym.MULTIPLICACION:
+            case sym.DIVISION:
+            case sym.MODULO:
+                mensaje_personalizado = "Error: Operador sin término válido.";
+                break;
+            case sym.IGUAL:
+            case sym.DIFERENCIA:
+            case sym.MAYOR:
+            case sym.MENOR:
+            case sym.MAYOR_IGUAL:
+            case sym.MENOR_IGUAL:
+                mensaje_personalizado = "Error: Comparación inválida, falta un término.";
+                break;
+            case sym.PUNTOYCOMA:
+                mensaje_personalizado = "Error: Expresión inválida o vacía antes de ';'.";
+                break;
+            default:
+                mensaje_personalizado = "Error de sintaxis general cerca del token '" + token.value + "'.";
+                break;
+        }
+        System.out.println(mensaje_personalizado + " En la línea: "+(token.left+1) +", columna: "+(token.right+1));
+    }
+
+    public void report_fatal_error(String mensaje, Symbol token){
+        report_error(mensaje, token);
+        System.exit(1);
+    }
+:};
+
+/*PALABRAS RESERVADAS */
+terminal INT,LONG, FLOAT, DOUBLE, CHAR, BOOL, VOID, STRING;
+terminal IF, ELSE, SWITCH,FOR, WHILE, DO, BREAK, CONTINUE, RETURN, TRY, CATCH;
+
+/* OPERADORES*/
+terminal ASIGNACION,A_SUMA, A_RESTA,A_MODULO, A_MULTIPLICACION, A_DIVISION;
+terminal SUMA, RESTA, MULTIPLICACION, DIVISION, MODULO;
+terminal INCREMENTO, DECREMENTO;
+terminal IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+terminal AND, OR, NOT;
+
+/* SIMBOLOS*/
+terminal COMA, PUNTOYCOMA;
+terminal LLAVE_APERTURA, LLAVE_CIERRE;
+terminal PARENTESIS_APERTURA, PARENTESIS_CIERRE;
+terminal CORCHETE_APERTURA, CORCHETE_CIERRE;
+terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
+terminal LITERAL_CADENA, LITERAL_CARACTER;
+
+/* EXPRESIONES REGULARES */
+terminal ID, CADENA, CARACTER, BOOLEAN, DECIMAL, ENTERO;
+
+terminal ERROR;
+
+/* == NON TERMINAL === palabras de referencia a la gramatica===*/ 
+non terminal programa, declaraciones, dec_variables, tipo_dato, valor;
+non terminal expresion;
+
+/* PRECEDENCIA Y ASOCIATIVIDAD DE OPERADORES */
+precedence left OR;
+precedence left AND;
+precedence nonassoc IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+precedence left SUMA, RESTA;
+precedence left MULTIPLICACION, DIVISION, MODULO;
+precedence right NOT;
+
+
+/*REGLAS GRAMATICALES*/
+start with programa;
+
+programa ::= declaraciones;
+
+declaraciones::=  declaraciones dec_variables
+                  | dec_variables
+                  ;
+
+dec_variables::= tipo_dato ID ASIGNACION expresion PUNTOYCOMA
+                  {:System.out.println("->Declaración con asignación.");:}
+               | tipo_dato ID PUNTOYCOMA
+                  {:System.out.println("->Declaración simple.");:}
+            /*REGLAS DE RECUPERACIÓN DE ERRORES SINTACTICOS*/
+               | tipo_dato ID ASIGNACION expresion error:e
+                 {: parser.report_error("Error  de sintaxis: ", e);:}
+               | tipo_dato ID error:e
+                 {: parser.report_error("Error  de sintaxis: ", e);:}
+                 
+            /*
+              INICIO: REGLAS DE RECUPERACIÓN DE ERRORES LEXICOS
+            */
+               | ERROR:e
+                  {: parser.report_error("Error léxico en token: " + ((Symbol)e).value, e); :}
+                ;
+
+tipo_dato::= INT | LONG | FLOAT | DOUBLE | CHAR | BOOL | VOID | STRING;
+
+/*valor::= ENTERO | DECIMAL | CADENA | CARACTER | BOOLEAN;*/
+
+expresion ::=
+    /* Casos Base (los elementos más pequeños) */
+      ENTERO
+    | DECIMAL
+    | CADENA
+    | CARACTER
+    | BOOLEAN
+    | ID
+    | PARENTESIS_APERTURA expresion PARENTESIS_CIERRE
+    /* Operadores Aritméticos */
+    | expresion SUMA expresion
+    | expresion RESTA expresion
+    | expresion MULTIPLICACION expresion
+    | expresion DIVISION expresion
+    | expresion MODULO expresion
+    /* Operadores Relacionales */
+    | expresion IGUAL expresion
+    | expresion DIFERENCIA expresion
+    | expresion MAYOR expresion
+    | expresion MENOR expresion
+    | expresion MAYOR_IGUAL expresion
+    | expresion MENOR_IGUAL expresion
+    /* Operadores Lógicos */
+    | expresion AND expresion
+    | expresion OR expresion
+    | NOT expresion
+    ;

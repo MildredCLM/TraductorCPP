@@ -1,0 +1,12 @@
+int abc = 1;
+float x = (a + b);
+int res = a + b *5;
+bool y = a > 5 && b < 10;
+
+float x = (a + b;
+int a = 10>;
+int res = a + b *5
+
+
+
+
