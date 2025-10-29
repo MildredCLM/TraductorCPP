@@ -1,0 +1,371 @@
+package act2;
+
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Stack;
+
+parser code {:
+    protected java_cup.runtime.Symbol lastErrorToken;
+
+    // --- ¡ERROR BORRADO! ---
+    // (Aquí estaba el constructor 'public static Sintactico' que causaba el error 'duplicado')
+    // --- FIN ---
+
+    public static final String T_INT="int", T_FLOAT="float", T_CHAR="char", T_STRING="string", T_BOOL="bool";
+
+    public static class SymbolInfo {
+        public String tipo, alcance; public Object valor; public int linea, columna;
+        public SymbolInfo(String tipo, String alcance, int linea, int columna, Object valor){
+            this.tipo=tipo; this.alcance=alcance; this.linea=linea; this.columna=columna; this.valor=valor;
+        }
+    }
+
+    public java.util.Stack<java.util.HashMap<String, SymbolInfo>> tablaDeSimbolos;
+    public String alcanceActual = "global";
+    public String tipoActualDecl = null;
+    public String tipoFuncionActual = null;
+    public int erroresSem = 0, erroresSint = 0;
+
+    public void __init__() {
+        tablaDeSimbolos = new java.util.Stack<>();
+        iniciarAmbito();
+    }
+
+    public void iniciarAmbito(){
+        if (tablaDeSimbolos==null) tablaDeSimbolos = new java.util.Stack<>();
+        tablaDeSimbolos.push(new java.util.HashMap<>());
+    }
+    public void finalizarAmbito(){ if(!tablaDeSimbolos.isEmpty()) tablaDeSimbolos.pop(); }
+
+    public void insertarSimbolo(String id, String tipo) {
+        if (tablaDeSimbolos.isEmpty()) iniciarAmbito();
+        
+        // --- CORRECCIÓN DE 'var' ---
+        java.util.HashMap<String, SymbolInfo> amb = tablaDeSimbolos.peek();
+        
+        if (amb.containsKey(id)) {
+            report_semantic_error("Error: identificador '"+id+"' ya declarado en este ámbito.", null);
+        } else {
+            amb.put(id, new SymbolInfo(tipo, alcanceActual, -1, -1, null));
+        }
+    }
+    public void insertarSimbolo(String id, String tipo, Object unused) { insertarSimbolo(id, tipo); }
+
+    public SymbolInfo buscarSimboloInfo(String id){
+        for(int i=tablaDeSimbolos.size()-1;i>=0;i--){
+            
+            // --- CORRECCIÓN DE 'var' ---
+            java.util.HashMap<String, SymbolInfo> amb = tablaDeSimbolos.get(i);
+            
+            if (amb.containsKey(id)) return amb.get(id);
+        }
+        return null;
+    }
+    public String tipoDe(String id){
+        var info = buscarSimboloInfo(id);
+        return (info==null)? null : info.tipo;
+    }
+
+    public boolean tiposCompatibles(String destino, String fuente){
+        if (destino==null || fuente==null) return false;
+        if (destino.equals(fuente)) return true;
+        if (destino.equals(T_FLOAT) && fuente.equals(T_INT)) return true;
+        return false;
+    }
+
+    public void report_semantic_error(String msg, Object info){
+        erroresSem++;
+        if (info instanceof java_cup.runtime.Symbol s){
+            System.err.println(msg+" Línea "+(s.left+1)+", Columna "+(s.right+1));
+        } else System.err.println(msg);
+    }
+    public void report_expected(String esp, java_cup.runtime.Symbol enc){
+        erroresSint++;
+        String m="Error sintáctico: se esperaba "+esp+".";
+        if(enc!=null) m+=" Encontrado '"+enc.value+"' en "+(enc.left+1)+":"+ (enc.right+1);
+        System.err.println(m);
+    }
+    public void syntax_error(java_cup.runtime.Symbol tok){
+        erroresSint++;
+        String m="Error sintáctico: token inesperado";
+        if(tok!=null && tok.value!=null) m+=" '"+tok.value+"'";
+        System.err.println(m);
+    }
+    public void report_error(String m, Object info){
+        erroresSint++;
+        System.err.println(m);
+    }
+:};
+
+// --- ESTO ESTÁ PERFECTO ---
+init with {: __init__(); :};
+
+terminal CLASS, PUBLIC, PRIVATE, PROTECTED, STATIC, VOID, IF, ELSE, WHILE, FOR, DO, SWITCH, CASE, DEFAULT, BREAK, CONTINUE, RETURN, NEW, THIS;
+terminal INT, FLOAT, LONG, DOUBLE, BOOL, CHAR, STRING, NULL, BOOLEAN;
+terminal INCREMENTO, DECREMENTO, SUMA, RESTA, MULTIPLICACION, DIVISION, MODULO;
+terminal ASIGNACION, IGUAL, DIFERENCIA, MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL, NOT, AND, OR;
+terminal PARENTESIS_APERTURA, PARENTESIS_CIERRE, LLAVE_APERTURA, LLAVE_CIERRE, CORCHETE_APERTURA, CORCHETE_CIERRE;
+terminal COMA, PUNTOYCOMA, DOS_PUNTOS, PUNTO, QUESTION;
+terminal ID, ENTERO, DECIMAL, LITERAL_CADENA, LITERAL_CARACTER;
+terminal IFX;
+terminal ERROR;
+terminal CADENA, CARACTER;
+terminal A_SUMA, A_RESTA, A_MULTIPLICACION, A_DIVISION, A_MODULO;
+terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
+terminal TRY, CATCH;
+
+non terminal programa, lista_declaraciones, declaracion;
+non terminal dec_clase, cuerpo_clase, lista_miembros, miembro;
+non terminal dec_funcion, lista_parametros_opcional, lista_parametros, parametro;
+non terminal String tipo_dato;
+non terminal dec_variable, dec_variable_lista, lista_ids_con_asignacion, id_con_asignacion_opcional;
+non terminal sentencia, bloque_sentencias, lista_sentencias;
+non terminal sentencia_if, sentencia_while, sentencia_for, sentencia_return, sentencia_asignacion, sentencia_expr;
+non terminal for_init, for_condicion, for_actualizacion;
+non terminal String expresion;
+
+precedence nonassoc IGUAL, DIFERENCIA, MAYOR, MENOR, MAYOR_IGUAL, MENOR_IGUAL;
+precedence left OR;
+precedence left AND;
+precedence left SUMA, RESTA;
+precedence left MULTIPLICACION, DIVISION, MODULO;
+precedence right NOT, INCREMENTO, DECREMENTO;
+precedence nonassoc ELSE;
+precedence right IFX;
+
+start with programa;
+
+programa ::= lista_declaraciones
+           | /* empty */
+           ;
+
+lista_declaraciones ::= lista_declaraciones declaracion
+                      | declaracion
+                      ;
+
+declaracion ::= dec_clase
+              | dec_funcion
+              | dec_variable
+              ;
+
+dec_clase ::= CLASS ID LLAVE_APERTURA cuerpo_clase LLAVE_CIERRE PUNTOYCOMA
+            | CLASS ID LLAVE_APERTURA cuerpo_clase LLAVE_CIERRE
+            ;
+
+cuerpo_clase ::= lista_miembros
+               | /* empty */
+               ;
+
+lista_miembros ::= lista_miembros miembro
+                 | miembro
+                 ;
+
+miembro ::= dec_funcion
+          | dec_variable
+          ;
+
+dec_funcion ::=
+    tipo_dato:t ID:id PARENTESIS_APERTURA lista_parametros_opcional PARENTESIS_CIERRE
+    LLAVE_APERTURA
+      {:
+        // --- TU CÓDIGO CORRECTO ---
+        parser.insertarSimbolo((String)id,t);
+        parser.alcanceActual = "local";
+        parser.tipoFuncionActual = t;
+        parser.iniciarAmbito();
+      :}
+    bloque_sentencias
+    LLAVE_CIERRE
+      {:
+        parser.finalizarAmbito();
+        parser.alcanceActual = "global";
+        parser.tipoFuncionActual = null;
+      :}
+  | VOID ID:id PARENTESIS_APERTURA lista_parametros_opcional PARENTESIS_CIERRE
+    LLAVE_APERTURA
+      {:
+        // --- TU CÓDIGO CORRECTO ---
+        parser.insertarSimbolo((String)id,"void");
+        parser.alcanceActual = "local";
+        parser.tipoFuncionActual = "void";
+        parser.iniciarAmbito();
+      :}
+    bloque_sentencias
+    LLAVE_CIERRE
+      {:
+        parser.finalizarAmbito();
+        parser.alcanceActual = "global";
+        parser.tipoFuncionActual = null;
+      :}
+  ;
+
+lista_parametros_opcional ::= lista_parametros
+                            | /* empty */
+                            ;
+
+lista_parametros ::= lista_parametros COMA parametro
+                   | parametro
+                   ;
+
+parametro ::= tipo_dato ID ;
+
+tipo_dato ::= INT    {: parser.tipoActualDecl="int";    RESULT="int";    :}
+            | FLOAT  {: parser.tipoActualDecl="float";  RESULT="float";  :}
+            | CHAR   {: parser.tipoActualDecl="char";   RESULT="char";   :}
+            | STRING {: parser.tipoActualDecl="string"; RESULT="string"; :}
+            | BOOL   {: parser.tipoActualDecl="bool";   RESULT="bool";   :}
+            ;
+
+dec_variable ::= tipo_dato dec_variable_lista PUNTOYCOMA ;
+
+dec_variable_lista ::= lista_ids_con_asignacion ;
+
+lista_ids_con_asignacion ::= lista_ids_con_asignacion COMA id_con_asignacion_opcional
+                           | id_con_asignacion_opcional
+                           ;
+
+id_con_asignacion_opcional ::= ID:id
+    // --- TU CÓDIGO CORRECTO ---
+    {: parser.insertarSimbolo((String)id, parser.tipoActualDecl); :}
+  | ID:id ASIGNACION expresion:e
+    {:
+        if (!parser.tiposCompatibles(parser.tipoActualDecl, e)) {
+            parser.report_semantic_error("Error: asignación incompatible a '"+id+"'. Esperado "+parser.tipoActualDecl+", recibido "+e, null);
+        }
+        // --- TU CÓDIGO CORRECTO ---
+        parser.insertarSimbolo((String)id, parser.tipoActualDecl);
+    :}
+  ;
+
+bloque_sentencias ::= lista_sentencias
+                    | /* empty */
+                    ;
+
+lista_sentencias ::= lista_sentencias sentencia
+                   | sentencia
+                   ;
+
+sentencia ::=
+      LLAVE_APERTURA {: parser.iniciarAmbito(); :} bloque_sentencias LLAVE_CIERRE {: parser.finalizarAmbito(); :}
+    | sentencia_if
+    | sentencia_while
+    | sentencia_for
+    | sentencia_return
+    | sentencia_asignacion
+    | sentencia_expr
+    | dec_variable
+    ;
+
+sentencia_if ::=
+    IF PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia %prec IFX
+  | IF PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia ELSE sentencia
+  ;
+
+sentencia_while ::= WHILE PARENTESIS_APERTURA expresion PARENTESIS_CIERRE sentencia ;
+
+sentencia_for ::= FOR PARENTESIS_APERTURA for_init PUNTOYCOMA for_condicion PUNTOYCOMA for_actualizacion PARENTESIS_CIERRE sentencia ;
+
+for_init ::= tipo_dato dec_variable_lista
+           | ID:id ASIGNACION expresion:exprT
+             {:
+                 // --- TU CÓDIGO CORRECTO ---
+                 String t = parser.tipoDe((String)id);
+                 if (t==null){
+                     parser.report_semantic_error("Error: identificador '"+id+"' no declarado.", null);
+                 } else if (!parser.tiposCompatibles(t, exprT)){
+                     parser.report_semantic_error("Error: tipo incompatible al asignar a '"+id+"'. Esperado "+t+", recibido "+exprT, null);
+                 }
+             :}
+           | /* empty */
+           ;
+
+for_condicion ::= expresion
+                | /* empty */
+                ;
+
+for_actualizacion ::= ID:id ASIGNACION expresion:exprT
+                      {:
+                          // --- TU CÓDIGO CORRECTO ---
+                          String t = parser.tipoDe((String)id);
+                          if (t==null){
+                              parser.report_semantic_error("Error: identificador '"+id+"' no declarado.", null);
+                          } else if (!parser.tiposCompatibles(t, exprT)){
+                              parser.report_semantic_error("Error: tipo incompatible al asignar a '"+id+"'. Esperado "+t+", recibido "+exprT, null);
+                          }
+                      :}
+                    | /* empty */
+                    ;
+
+sentencia_asignacion ::= ID:id ASIGNACION expresion:exprT PUNTOYCOMA
+   {:
+     // --- TU CÓDIGO CORRECTO ---
+     String t = parser.tipoDe((String)id);
+     if (t==null){
+         parser.report_semantic_error("Error: identificador '"+id+"' no declarado.", null);
+     } else if (!parser.tiposCompatibles(t, exprT)){
+         parser.report_semantic_error("Error: tipo incompatible al asignar a '"+id+"'. Esperado "+t+", recibido "+exprT, null);
+     }
+   :}
+  ;
+
+sentencia_return ::=
+      RETURN expresion:e PUNTOYCOMA
+      {:
+          if (parser.tipoFuncionActual==null){
+              parser.report_semantic_error("Error: 'return' fuera de una función.", null);
+          } else if ("void".equals(parser.tipoFuncionActual)) {
+              parser.report_semantic_error("Error: 'return' con valor en función void.", null);
+          } else if (!parser.tiposCompatibles(parser.tipoFuncionActual, e)) {
+              parser.report_semantic_error("Error: return incompatible. Esperado "+parser.tipoFuncionActual+", recibido "+e, null);
+          }
+      :}
+    | RETURN PUNTOYCOMA
+      {:
+          if (parser.tipoFuncionActual!=null && !"void".equals(parser.tipoFuncionActual)){
+              parser.report_semantic_error("Error: falta valor en return de función '"+parser.tipoFuncionActual+"'.", null);
+          }
+      :}
+    ;
+
+sentencia_expr ::= expresion PUNTOYCOMA ;
+
+expresion ::=
+      ENTERO            {: RESULT = "int"; :}
+    | DECIMAL           {: RESULT = "float"; :}
+    | CADENA            {: RESULT = "string"; :}
+    | CARACTER          {: RESULT = "char"; :}
+    | BOOLEAN           {: RESULT = "bool"; :}
+    | ID:id
+      {:
+          // --- TU CÓDIGO CORRECTO ---
+          String t = parser.tipoDe((String)id);
+          if (t==null){ parser.report_semantic_error("Error: identificador '"+id+"' no declarado.", null); RESULT="error_tipo"; }
+          else RESULT = t;
+      :}
+    | expresion:e1 SUMA expresion:e2
+      {:
+          RESULT = (e1.equals("string") || e2.equals("string")) ? "string"
+                 : (e1.equals("float")  || e2.equals("float"))  ? "float" : "int";
+      :}
+    | expresion:e1 RESTA expresion:e2
+      {:
+          RESULT = (e1.equals("float") || e2.equals("float")) ? "float" : "int";
+      :}
+    | expresion:e1 MULTIPLICACION expresion:e2
+      {:
+          RESULT = (e1.equals("float") || e2.equals("float")) ? "float" : "int";
+      :}
+    | expresion:e1 DIVISION expresion:e2   {: RESULT = "float"; :}
+    | expresion:e1 MODULO expresion:e2     {: RESULT = "int";   :}
+    | PARENTESIS_APERTURA expresion:e PARENTESIS_CIERRE {: RESULT = e; :}
+    | expresion:e1 IGUAL expresion:e2          {: RESULT = "bool"; :}
+    | expresion:e1 DIFERENCIA expresion:e2     {: RESULT = "bool"; :}
+    | expresion:e1 MENOR expresion:e2          {: RESULT = "bool"; :}
+    | expresion:e1 MAYOR expresion:e2          {: RESULT = "bool"; :}
+    | expresion:e1 MENOR_IGUAL expresion:e2    {: RESULT = "bool"; :}
+    | expresion:e1 MAYOR_IGUAL expresion:e2    {: RESULT = "bool"; :}
+    | NOT expresion:e                        {: RESULT = "bool"; :}
+    | expresion:e1 AND expresion:e2            {: RESULT = "bool"; :}
+    | expresion:e1 OR  expresion:e2            {: RESULT = "bool"; :}
+    ;
