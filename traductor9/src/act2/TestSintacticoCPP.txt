@@ -1,0 +1,29 @@
+int a = 10;
+int b = 5;
+float x = 7.5;
+float y = 2.5;
+
+int suma = a + b;
+int resta = a - b;
+int multiplicacion = a * b;
+int modulo = a % b;
+
+float division1 = x / y;
+float division2 = a / b;
+
+int complejo1 = (a + b) * (a - b);
+float complejo2 = (x + y) / (x - y);
+
+int precedencia = a + b * 3;
+float parentesis = (x + y) * 2.0;
+
+int abc = 5;
+float defg = abc;
+
+char miCaracter = 'A';
+string mi_cadena = "hola hola";
+
+
+
+
+

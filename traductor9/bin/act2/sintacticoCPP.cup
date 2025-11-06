@@ -1,0 +1,433 @@
+package act2;
+
+import java_cup.runtime.*;
+import java.io.*;
+import act2.ParserHelper;
+
+parser code {:
+    public ParserHelper helper = new ParserHelper();
+    
+    public void report_error(String message, Object info) {
+        helper.reportSyntaxError(message, (Symbol) info);
+    }
+    
+    public void syntax_error(Symbol cur_token) {
+        helper.reportSyntaxError("Token inesperado", cur_token);
+    }
+:};
+
+init with {: :};
+
+terminal CLASS, PUBLIC, PRIVATE, PROTECTED, STATIC, VOID;
+terminal IF, ELSE, WHILE, FOR, DO, SWITCH, CASE, DEFAULT, BREAK, CONTINUE, RETURN;
+terminal NEW, THIS, TRY, CATCH;
+terminal INT, FLOAT, LONG, DOUBLE, BOOL, CHAR, STRING, NULL, BOOLEAN;
+terminal INCREMENTO, DECREMENTO, SUMA, RESTA, MULTIPLICACION, DIVISION, MODULO;
+terminal ASIGNACION, IGUAL, DIFERENCIA, MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL;
+terminal NOT, AND, OR;
+terminal PARENTESIS_APERTURA, PARENTESIS_CIERRE;
+terminal LLAVE_APERTURA, LLAVE_CIERRE;
+terminal CORCHETE_APERTURA, CORCHETE_CIERRE;
+terminal COMA, PUNTOYCOMA, DOS_PUNTOS, PUNTO, QUESTION;
+terminal String ID, ENTERO, DECIMAL, LITERAL_CADENA, LITERAL_CARACTER;
+terminal A_SUMA, A_RESTA, A_MULTIPLICACION, A_DIVISION, A_MODULO;
+terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
+terminal ERROR, IFX;
+
+
+non terminal programa, lista_declaraciones, declaracion;
+non terminal dec_clase, cuerpo_clase, lista_miembros, miembro;
+non terminal dec_funcion, lista_parametros_opcional, lista_parametros, parametro;
+non terminal String tipo_dato;
+non terminal dec_variable, dec_variable_lista, lista_ids_con_asignacion, id_con_asignacion_opcional;
+non terminal sentencia, bloque_sentencias, lista_sentencias;
+non terminal sentencia_if, sentencia_while, sentencia_for, sentencia_return;
+non terminal sentencia_asignacion, sentencia_expr;
+non terminal for_init, for_condicion, for_actualizacion, asignacion_expr;
+non terminal String expresion;
+
+precedence right ASIGNACION;
+precedence left OR;
+precedence left AND;
+precedence left IGUAL, DIFERENCIA;
+precedence left MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL;
+precedence left SUMA, RESTA;
+precedence left MULTIPLICACION, DIVISION, MODULO;
+precedence right NOT, INCREMENTO, DECREMENTO;
+precedence nonassoc ELSE;
+
+start with programa;
+
+programa ::= lista_declaraciones | ;
+
+lista_declaraciones ::= lista_declaraciones declaracion | declaracion ;
+
+declaracion ::= dec_clase | dec_funcion | dec_variable ;
+
+dec_clase ::= CLASS ID LLAVE_APERTURA cuerpo_clase LLAVE_CIERRE PUNTOYCOMA
+            | CLASS ID LLAVE_APERTURA cuerpo_clase LLAVE_CIERRE ;
+
+cuerpo_clase ::= lista_miembros | ;
+
+lista_miembros ::= lista_miembros miembro | miembro ;
+
+miembro ::= dec_funcion | dec_variable ;
+
+dec_funcion ::=
+    tipo_dato:t ID:id_name PARENTESIS_APERTURA lista_parametros_opcional PARENTESIS_CIERRE
+    LLAVE_APERTURA
+    {:
+        parser.helper.insertarSimbolo(id_name, t, id_nameleft + 1, id_nameright + 1);
+        parser.helper.alcanceActual = "local_" + id_name;
+        parser.helper.tipoFuncionActual = t;
+        parser.helper.iniciarAmbito();
+    :}
+    bloque_sentencias
+    LLAVE_CIERRE
+    {:
+        parser.helper.finalizarAmbito();
+        parser.helper.alcanceActual = "global";
+        parser.helper.tipoFuncionActual = null;
+    :}
+  | VOID ID:id_name PARENTESIS_APERTURA lista_parametros_opcional PARENTESIS_CIERRE
+    LLAVE_APERTURA
+    {:
+        parser.helper.insertarSimbolo(id_name, ParserHelper.T_VOID, id_nameleft + 1, id_nameright + 1);
+        parser.helper.alcanceActual = "local_" + id_name;
+        parser.helper.tipoFuncionActual = ParserHelper.T_VOID;
+        parser.helper.iniciarAmbito();
+    :}
+    bloque_sentencias
+    LLAVE_CIERRE
+    {:
+        parser.helper.finalizarAmbito();
+        parser.helper.alcanceActual = "global";
+        parser.helper.tipoFuncionActual = null;
+    :}
+  ;
+
+lista_parametros_opcional ::= lista_parametros | ;
+
+lista_parametros ::= lista_parametros COMA parametro | parametro ;
+
+parametro ::= tipo_dato:t ID:id_name
+    {: parser.helper.insertarSimbolo(id_name, t, id_nameleft + 1, id_nameright + 1); :} ;
+
+tipo_dato ::= INT    {: parser.helper.tipoActualDecl=ParserHelper.T_INT;    RESULT=ParserHelper.T_INT;    :}
+            | FLOAT  {: parser.helper.tipoActualDecl=ParserHelper.T_FLOAT;  RESULT=ParserHelper.T_FLOAT;  :}
+            | CHAR   {: parser.helper.tipoActualDecl=ParserHelper.T_CHAR;   RESULT=ParserHelper.T_CHAR;   :}
+            | STRING {: parser.helper.tipoActualDecl=ParserHelper.T_STRING; RESULT=ParserHelper.T_STRING; :}
+            | BOOL   {: parser.helper.tipoActualDecl=ParserHelper.T_BOOL;   RESULT=ParserHelper.T_BOOL;   :}
+            ;
+
+dec_variable ::= tipo_dato dec_variable_lista PUNTOYCOMA ;
+
+dec_variable_lista ::= lista_ids_con_asignacion ;
+
+lista_ids_con_asignacion ::= lista_ids_con_asignacion COMA id_con_asignacion_opcional
+                           | id_con_asignacion_opcional ;
+
+id_con_asignacion_opcional ::= 
+    ID:id_name
+    {: parser.helper.insertarSimbolo(id_name, parser.helper.tipoActualDecl, id_nameleft + 1, id_nameright + 1); :}
+  | ID:id_name ASIGNACION expresion:e
+    {:
+        if (!parser.helper.tiposCompatibles(parser.helper.tipoActualDecl, e)) {
+            parser.helper.reportSemanticError(
+                "Tipo incompatible en inicialización de '" + id_name + 
+                "'. Se esperaba '" + parser.helper.tipoActualDecl + "' pero se recibió '" + e + "'",
+                id_nameleft + 1, id_nameright + 1
+            );
+        }
+        parser.helper.insertarSimbolo(id_name, parser.helper.tipoActualDecl, id_nameleft + 1, id_nameright + 1);
+    :}
+  ;
+
+bloque_sentencias ::= lista_sentencias | ;
+
+lista_sentencias ::= lista_sentencias sentencia | sentencia ;
+
+sentencia ::=
+      LLAVE_APERTURA {: parser.helper.iniciarAmbito(); :} 
+      bloque_sentencias 
+      LLAVE_CIERRE {: parser.helper.finalizarAmbito(); :}
+    | sentencia_if
+    | sentencia_while
+    | sentencia_for
+    | sentencia_return
+    | sentencia_asignacion
+    | sentencia_expr
+    | dec_variable
+    ;
+
+sentencia_if ::=
+    IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia
+    {:
+        if (!cond.equals(ParserHelper.T_BOOL) && !cond.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La condición del 'if' debe ser de tipo booleano, no '" + cond + "'",
+                condleft + 1, condright + 1
+            );
+        }
+    :}
+  | IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia ELSE sentencia
+    {:
+        if (!cond.equals(ParserHelper.T_BOOL) && !cond.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La condición del 'if' debe ser de tipo booleano, no '" + cond + "'",
+                condleft + 1, condright + 1
+            );
+        }
+    :}
+  ;
+
+sentencia_while ::= 
+    WHILE PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia
+    {:
+        if (!cond.equals(ParserHelper.T_BOOL) && !cond.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La condición del 'while' debe ser de tipo booleano, no '" + cond + "'",
+                condleft + 1, condright + 1
+            );
+        }
+    :}
+  ;
+
+sentencia_for ::= 
+    FOR PARENTESIS_APERTURA for_init PUNTOYCOMA for_condicion PUNTOYCOMA 
+    for_actualizacion PARENTESIS_CIERRE sentencia ;
+
+for_init ::= tipo_dato dec_variable_lista
+           | asignacion_expr
+           | ;
+
+for_condicion ::= 
+    expresion:cond
+    {:
+        if (!cond.equals(ParserHelper.T_BOOL) && !cond.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La condición del 'for' debe ser de tipo booleano, no '" + cond + "'",
+                condleft + 1, condright + 1
+            );
+        }
+    :}
+  | ;
+
+for_actualizacion ::= asignacion_expr | ;
+
+asignacion_expr ::= 
+    ID:id_name ASIGNACION expresion:exprT
+    {:
+        String t = parser.helper.tipoDe(id_name);
+        if (t == null){
+            parser.helper.reportSemanticError("Identificador '"+id_name+"' no declarado", 
+                                            id_nameleft + 1, id_nameright + 1);
+        } else if (!parser.helper.tiposCompatibles(t, exprT)){
+            parser.helper.reportSemanticError(
+                "Tipo incompatible en asignación a '"+id_name+
+                "'. Se esperaba '"+t+"' pero se recibió '"+exprT+"'",
+                id_nameleft + 1, id_nameright + 1
+            );
+        }
+    :}
+  ;
+
+sentencia_asignacion ::= asignacion_expr PUNTOYCOMA ;
+
+sentencia_return ::=
+    RETURN expresion:e PUNTOYCOMA
+    {:
+        if (parser.helper.tipoFuncionActual == null){
+            parser.helper.reportSemanticError("'return' fuera de una función", 
+                                            eleft + 1, eright + 1);
+        } else if (ParserHelper.T_VOID.equals(parser.helper.tipoFuncionActual)) {
+            parser.helper.reportSemanticError("'return' con valor en función void", 
+                                            eleft + 1, eright + 1);
+        } else if (!parser.helper.tiposCompatibles(parser.helper.tipoFuncionActual, e)) {
+            parser.helper.reportSemanticError(
+                "Tipo de retorno incompatible. Se esperaba '"+parser.helper.tipoFuncionActual+
+                "' pero se encontró '"+e+"'",
+                eleft + 1, eright + 1
+            );
+        }
+    :}
+  | RETURN PUNTOYCOMA
+    {:
+        if (parser.helper.tipoFuncionActual != null && !ParserHelper.T_VOID.equals(parser.helper.tipoFuncionActual)){
+            parser.helper.reportSemanticError(
+                "Falta valor de retorno en función de tipo '"+parser.helper.tipoFuncionActual+"'",
+                0, 0
+            );
+        }
+    :}
+  ;
+
+sentencia_expr ::= expresion PUNTOYCOMA ;
+
+expresion ::=
+    ENTERO          {: RESULT = ParserHelper.T_INT; :}
+  | DECIMAL         {: RESULT = ParserHelper.T_FLOAT; :}
+  | LITERAL_CADENA  {: RESULT = ParserHelper.T_STRING; :}
+  | LITERAL_CARACTER{: RESULT = ParserHelper.T_CHAR; :}
+  | BOOLEAN         {: RESULT = ParserHelper.T_BOOL; :}
+  
+  | ID:id_name
+    {:
+        String t = parser.helper.tipoDe(id_name);
+        if (t == null) {
+            parser.helper.reportSemanticError("Identificador '"+id_name+"' no declarado", 
+                                            id_nameleft + 1, id_nameright + 1);
+            RESULT = ParserHelper.T_ERROR;
+        } else {
+            RESULT = t;
+        }
+    :}
+  
+  | PARENTESIS_APERTURA expresion:e PARENTESIS_CIERRE {: RESULT = e; :}
+  
+  | expresion:e1 SUMA expresion:e2
+    {:
+        if (e1.equals(ParserHelper.T_STRING) || e2.equals(ParserHelper.T_STRING)) {
+            if (e1.equals(ParserHelper.T_STRING) && e2.equals(ParserHelper.T_STRING)) {
+                RESULT = ParserHelper.T_STRING;
+            } else {
+                parser.helper.reportSemanticError(
+                    "No se puede concatenar string con tipo '" + 
+                    (e1.equals(ParserHelper.T_STRING) ? e2 : e1) + "'",
+                    e1left + 1, e1right + 1
+                );
+                RESULT = ParserHelper.T_ERROR;
+            }
+        } else {
+            RESULT = parser.helper.validarOperacionAritmetica(e1, e2, "+", e1left + 1, e1right + 1);
+        }
+    :}
+  
+  | expresion:e1 RESTA expresion:e2
+    {: RESULT = parser.helper.validarOperacionAritmetica(e1, e2, "-", e1left + 1, e1right + 1); :}
+  
+  | expresion:e1 MULTIPLICACION expresion:e2
+    {: RESULT = parser.helper.validarOperacionAritmetica(e1, e2, "*", e1left + 1, e1right + 1); :}
+  
+  | expresion:e1 DIVISION expresion:e2
+    {:
+        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
+            RESULT = ParserHelper.T_ERROR;
+        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
+            RESULT = ParserHelper.T_FLOAT;
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '/' no aplicable a tipos '" + e1 + "' y '" + e2 + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = ParserHelper.T_ERROR;
+        }
+    :}
+  
+  | expresion:e1 MODULO expresion:e2
+    {:
+        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
+            RESULT = ParserHelper.T_ERROR;
+        } else if (e1.equals(ParserHelper.T_INT) && e2.equals(ParserHelper.T_INT)) {
+            RESULT = ParserHelper.T_INT;
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '%' solo aplicable a tipos 'int' y 'int', no a '" + 
+                e1 + "' y '" + e2 + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = ParserHelper.T_ERROR;
+        }
+    :}
+  
+  | expresion:e1 AND expresion:e2
+    {: RESULT = parser.helper.validarOperacionLogica(e1, e2, "&&", e1left + 1, e1right + 1); :}
+  
+  | expresion:e1 OR expresion:e2
+    {: RESULT = parser.helper.validarOperacionLogica(e1, e2, "||", e1left + 1, e1right + 1); :}
+  
+  | NOT expresion:e
+    {:
+        if (e.equals(ParserHelper.T_ERROR)) {
+            RESULT = ParserHelper.T_ERROR;
+        } else if (parser.helper.esBooleano(e)) {
+            RESULT = ParserHelper.T_BOOL;
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '!' solo aplicable a tipo booleano, no a '" + e + "'",
+                eleft + 1, eright + 1
+            );
+            RESULT = ParserHelper.T_ERROR;
+        }
+    :}
+  
+  | expresion:e1 IGUAL expresion:e2
+    {: RESULT = parser.helper.validarComparacion(e1, e2, "==", e1left + 1, e1right + 1); :}
+  
+  | expresion:e1 DIFERENCIA expresion:e2
+    {: RESULT = parser.helper.validarComparacion(e1, e2, "!=", e1left + 1, e1right + 1); :}
+  
+  | expresion:e1 MENOR expresion:e2
+    {:
+        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
+            RESULT = ParserHelper.T_ERROR;
+        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
+            RESULT = ParserHelper.T_BOOL;
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '<' solo aplicable a tipos numéricos, no a '" + 
+                e1 + "' y '" + e2 + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = ParserHelper.T_ERROR;
+        }
+    :}
+  
+  | expresion:e1 MAYOR expresion:e2
+    {:
+        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
+            RESULT = ParserHelper.T_ERROR;
+        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
+            RESULT = ParserHelper.T_BOOL;
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '>' solo aplicable a tipos numéricos, no a '" + 
+                e1 + "' y '" + e2 + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = ParserHelper.T_ERROR;
+        }
+    :}
+  
+  | expresion:e1 MENOR_IGUAL expresion:e2
+    {:
+        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
+            RESULT = ParserHelper.T_ERROR;
+        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
+            RESULT = ParserHelper.T_BOOL;
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '<=' solo aplicable a tipos numéricos, no a '" + 
+                e1 + "' y '" + e2 + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = ParserHelper.T_ERROR;
+        }
+    :}
+  
+  | expresion:e1 MAYOR_IGUAL expresion:e2
+    {:
+        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
+            RESULT = ParserHelper.T_ERROR;
+        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
+            RESULT = ParserHelper.T_BOOL;
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '>=' solo aplicable a tipos numéricos, no a '" + 
+                e1 + "' y '" + e2 + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = ParserHelper.T_ERROR;
+        }
+    :}
+  ;
