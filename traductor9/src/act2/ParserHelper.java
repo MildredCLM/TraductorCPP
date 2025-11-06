@@ -19,6 +19,16 @@ public class ParserHelper {
     public static final String T_VOID = "void";
     public static final String T_ERROR = "error_tipo";
 
+    // === CLASE PARA RESULTADOS DE EXPRESIONES ===
+    public static class ExprResult {
+        public String tipo;
+        public Object valor;
+        public ExprResult(String tipo, Object valor) {
+            this.tipo = tipo;
+            this.valor = valor;
+        }
+    }
+
     // === CLASE PARA INFORMACIÓN DE SÍMBOLOS ===
     public static class SymbolInfo {
         public String tipo, alcance;
@@ -69,20 +79,19 @@ public class ParserHelper {
      * @param tipo Tipo de dato (T_INT, T_FLOAT, etc.)
      * @param linea Número de línea (1-based)
      * @param columna Número de columna (1-based)
+     * @param valor El valor inicial (ej. 10, "hola", true)
      */
-    public void insertarSimbolo(String id, String tipo, int linea, int columna) {
-        if (tablaDeSimbolos.isEmpty()) {
-            iniciarAmbito();
-        }
-
-        HashMap<String, SymbolInfo> amb = tablaDeSimbolos.peek();
-
-        if (amb.containsKey(id)) {
-            reportSemanticError("El identificador '" + id + "' ya fue declarado en este ámbito", linea, columna);
-        } else {
-            amb.put(id, new SymbolInfo(tipo, alcanceActual, linea, columna, null));
-        }
+    public void insertarSimbolo(String id, String tipo, int linea, int columna, Object valor) {
+    SymbolInfo info = new SymbolInfo(tipo, alcanceActual, linea, columna, valor);
+    if (tablaDeSimbolos.peek().containsKey(id)) {
+        reportSemanticError(
+            "Identificador '" + id + "' ya declarado en este ámbito",
+            linea, columna
+        );
+    } else {
+        tablaDeSimbolos.peek().put(id, info);
     }
+}
 
     public SymbolInfo buscarSimboloInfo(String id) {
         if (tablaDeSimbolos == null) return null;
@@ -254,7 +263,9 @@ public class ParserHelper {
                 System.out.println("  " + key + " -> Tipo: " + info.tipo + 
                                  ", Alcance: " + info.alcance + 
                                  ", Línea: " + info.linea + 
-                                 ", Columna: " + info.columna);
+                                 ", Columna: " + info.columna +
+                                 ", Valor: " + info.valor);
+                                // ", Valor: " + (info.valor != null ? info.valor.toString() : "null"));
             }
             nivel++;
         }

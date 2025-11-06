@@ -44,7 +44,8 @@ non terminal sentencia, bloque_sentencias, lista_sentencias;
 non terminal sentencia_if, sentencia_while, sentencia_for, sentencia_return;
 non terminal sentencia_asignacion, sentencia_expr;
 non terminal for_init, for_condicion, for_actualizacion, asignacion_expr;
-non terminal String expresion;
+/*non terminal String expresion;*/
+non terminal ParserHelper.ExprResult expresion;
 
 precedence right ASIGNACION;
 precedence left OR;
@@ -77,7 +78,7 @@ dec_funcion ::=
     tipo_dato:t ID:id_name PARENTESIS_APERTURA lista_parametros_opcional PARENTESIS_CIERRE
     LLAVE_APERTURA
     {:
-        parser.helper.insertarSimbolo(id_name, t, id_nameleft + 1, id_nameright + 1);
+        parser.helper.insertarSimbolo(id_name, t, id_nameleft + 1, id_nameright + 1, null);
         parser.helper.alcanceActual = "local_" + id_name;
         parser.helper.tipoFuncionActual = t;
         parser.helper.iniciarAmbito();
@@ -92,7 +93,7 @@ dec_funcion ::=
   | VOID ID:id_name PARENTESIS_APERTURA lista_parametros_opcional PARENTESIS_CIERRE
     LLAVE_APERTURA
     {:
-        parser.helper.insertarSimbolo(id_name, ParserHelper.T_VOID, id_nameleft + 1, id_nameright + 1);
+        parser.helper.insertarSimbolo(id_name, ParserHelper.T_VOID, id_nameleft + 1, id_nameright + 1, null);
         parser.helper.alcanceActual = "local_" + id_name;
         parser.helper.tipoFuncionActual = ParserHelper.T_VOID;
         parser.helper.iniciarAmbito();
@@ -111,7 +112,7 @@ lista_parametros_opcional ::= lista_parametros | ;
 lista_parametros ::= lista_parametros COMA parametro | parametro ;
 
 parametro ::= tipo_dato:t ID:id_name
-    {: parser.helper.insertarSimbolo(id_name, t, id_nameleft + 1, id_nameright + 1); :} ;
+    {: parser.helper.insertarSimbolo(id_name, t, id_nameleft + 1, id_nameright + 1, null); :} ;
 
 tipo_dato ::= INT    {: parser.helper.tipoActualDecl=ParserHelper.T_INT;    RESULT=ParserHelper.T_INT;    :}
             | FLOAT  {: parser.helper.tipoActualDecl=ParserHelper.T_FLOAT;  RESULT=ParserHelper.T_FLOAT;  :}
@@ -129,17 +130,17 @@ lista_ids_con_asignacion ::= lista_ids_con_asignacion COMA id_con_asignacion_opc
 
 id_con_asignacion_opcional ::= 
     ID:id_name
-    {: parser.helper.insertarSimbolo(id_name, parser.helper.tipoActualDecl, id_nameleft + 1, id_nameright + 1); :}
+    {: parser.helper.insertarSimbolo(id_name, parser.helper.tipoActualDecl, id_nameleft + 1, id_nameright + 1, null); :}
   | ID:id_name ASIGNACION expresion:e
     {:
-        if (!parser.helper.tiposCompatibles(parser.helper.tipoActualDecl, e)) {
+        if (!parser.helper.tiposCompatibles(parser.helper.tipoActualDecl, e.tipo)) {
             parser.helper.reportSemanticError(
                 "Tipo incompatible en inicialización de '" + id_name + 
                 "'. Se esperaba '" + parser.helper.tipoActualDecl + "' pero se recibió '" + e + "'",
                 id_nameleft + 1, id_nameright + 1
             );
         }
-        parser.helper.insertarSimbolo(id_name, parser.helper.tipoActualDecl, id_nameleft + 1, id_nameright + 1);
+        parser.helper.insertarSimbolo(id_name, parser.helper.tipoActualDecl, id_nameleft + 1, id_nameright + 1, e.valor);
     :}
   ;
 
@@ -163,18 +164,18 @@ sentencia ::=
 sentencia_if ::=
     IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia
     {:
-        if (!cond.equals(ParserHelper.T_BOOL) && !cond.equals(ParserHelper.T_ERROR)) {
+        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
             parser.helper.reportSemanticError(
-                "La condición del 'if' debe ser de tipo booleano, no '" + cond + "'",
+                "La condición del 'if' debe ser de tipo booleano, no '" + cond.tipo + "'",
                 condleft + 1, condright + 1
             );
         }
     :}
   | IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia ELSE sentencia
     {:
-        if (!cond.equals(ParserHelper.T_BOOL) && !cond.equals(ParserHelper.T_ERROR)) {
+        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
             parser.helper.reportSemanticError(
-                "La condición del 'if' debe ser de tipo booleano, no '" + cond + "'",
+                "La condición del 'if' debe ser de tipo booleano, no '" + cond.tipo + "'",
                 condleft + 1, condright + 1
             );
         }
@@ -184,9 +185,9 @@ sentencia_if ::=
 sentencia_while ::= 
     WHILE PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia
     {:
-        if (!cond.equals(ParserHelper.T_BOOL) && !cond.equals(ParserHelper.T_ERROR)) {
+        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
             parser.helper.reportSemanticError(
-                "La condición del 'while' debe ser de tipo booleano, no '" + cond + "'",
+                "La condición del 'while' debe ser de tipo booleano, no '" + cond.tipo + "'",
                 condleft + 1, condright + 1
             );
         }
@@ -204,9 +205,9 @@ for_init ::= tipo_dato dec_variable_lista
 for_condicion ::= 
     expresion:cond
     {:
-        if (!cond.equals(ParserHelper.T_BOOL) && !cond.equals(ParserHelper.T_ERROR)) {
+        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
             parser.helper.reportSemanticError(
-                "La condición del 'for' debe ser de tipo booleano, no '" + cond + "'",
+                "La condición del 'for' debe ser de tipo booleano, no '" + cond.tipo + "'",
                 condleft + 1, condright + 1
             );
         }
@@ -222,10 +223,10 @@ asignacion_expr ::=
         if (t == null){
             parser.helper.reportSemanticError("Identificador '"+id_name+"' no declarado", 
                                             id_nameleft + 1, id_nameright + 1);
-        } else if (!parser.helper.tiposCompatibles(t, exprT)){
+        } else if (!parser.helper.tiposCompatibles(t, exprT.tipo)){
             parser.helper.reportSemanticError(
                 "Tipo incompatible en asignación a '"+id_name+
-                "'. Se esperaba '"+t+"' pero se recibió '"+exprT+"'",
+                "'. Se esperaba '"+t+"' pero se recibió '"+exprT.tipo+"'",
                 id_nameleft + 1, id_nameright + 1
             );
         }
@@ -243,10 +244,10 @@ sentencia_return ::=
         } else if (ParserHelper.T_VOID.equals(parser.helper.tipoFuncionActual)) {
             parser.helper.reportSemanticError("'return' con valor en función void", 
                                             eleft + 1, eright + 1);
-        } else if (!parser.helper.tiposCompatibles(parser.helper.tipoFuncionActual, e)) {
+        } else if (!parser.helper.tiposCompatibles(parser.helper.tipoFuncionActual, e.tipo)) {
             parser.helper.reportSemanticError(
                 "Tipo de retorno incompatible. Se esperaba '"+parser.helper.tipoFuncionActual+
-                "' pero se encontró '"+e+"'",
+                "' pero se encontró '"+e.tipo+"'",
                 eleft + 1, eright + 1
             );
         }
@@ -265,11 +266,11 @@ sentencia_return ::=
 sentencia_expr ::= expresion PUNTOYCOMA ;
 
 expresion ::=
-    ENTERO          {: RESULT = ParserHelper.T_INT; :}
-  | DECIMAL         {: RESULT = ParserHelper.T_FLOAT; :}
-  | LITERAL_CADENA  {: RESULT = ParserHelper.T_STRING; :}
-  | LITERAL_CARACTER{: RESULT = ParserHelper.T_CHAR; :}
-  | BOOLEAN         {: RESULT = ParserHelper.T_BOOL; :}
+   ENTERO:val          {: RESULT = new ParserHelper.ExprResult(ParserHelper.T_INT, val); :}
+| DECIMAL:val         {: RESULT = new ParserHelper.ExprResult(ParserHelper.T_FLOAT, val); :}
+| LITERAL_CADENA:val  {: RESULT = new ParserHelper.ExprResult(ParserHelper.T_STRING, val); :}
+| LITERAL_CARACTER:val{: RESULT = new ParserHelper.ExprResult(ParserHelper.T_CHAR, val); :}
+| BOOLEAN:val         {: RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, val); :}
   
   | ID:id_name
     {:
@@ -277,9 +278,9 @@ expresion ::=
         if (t == null) {
             parser.helper.reportSemanticError("Identificador '"+id_name+"' no declarado", 
                                             id_nameleft + 1, id_nameright + 1);
-            RESULT = ParserHelper.T_ERROR;
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         } else {
-            RESULT = t;
+            RESULT = new ParserHelper.ExprResult(t, id_name);
         }
     :}
   
@@ -287,147 +288,284 @@ expresion ::=
   
   | expresion:e1 SUMA expresion:e2
     {:
-        if (e1.equals(ParserHelper.T_STRING) || e2.equals(ParserHelper.T_STRING)) {
-            if (e1.equals(ParserHelper.T_STRING) && e2.equals(ParserHelper.T_STRING)) {
-                RESULT = ParserHelper.T_STRING;
+        if (e1.tipo.equals(ParserHelper.T_STRING) || e2.tipo.equals(ParserHelper.T_STRING)) {
+            if (e1.tipo.equals(ParserHelper.T_STRING) && e2.tipo.equals(ParserHelper.T_STRING)) {
+                RESULT = new ParserHelper.ExprResult(ParserHelper.T_STRING, e1.valor.toString() + e2.valor.toString());
             } else {
                 parser.helper.reportSemanticError(
                     "No se puede concatenar string con tipo '" + 
-                    (e1.equals(ParserHelper.T_STRING) ? e2 : e1) + "'",
+                    (e1.tipo.equals(ParserHelper.T_STRING) ? e2.tipo : e1.tipo) + "'",
                     e1left + 1, e1right + 1
                 );
-                RESULT = ParserHelper.T_ERROR;
+                RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
             }
         } else {
-            RESULT = parser.helper.validarOperacionAritmetica(e1, e2, "+", e1left + 1, e1right + 1);
+            String tipo = parser.helper.validarOperacionAritmetica(e1.tipo, e2.tipo, "+", e1left + 1, e1right + 1);
+            // Aquí deberíamos calcular el valor real si ambos son literales
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    if (tipo.equals(ParserHelper.T_INT)) {
+                        valor = Integer.parseInt(e1.valor.toString()) + Integer.parseInt(e2.valor.toString());
+                    } else if (tipo.equals(ParserHelper.T_FLOAT)) {
+                        valor = Float.parseFloat(e1.valor.toString()) + Float.parseFloat(e2.valor.toString());
+                    }
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            RESULT = new ParserHelper.ExprResult(tipo, valor);
         }
     :}
   
   | expresion:e1 RESTA expresion:e2
-    {: RESULT = parser.helper.validarOperacionAritmetica(e1, e2, "-", e1left + 1, e1right + 1); :}
+    {: 
+        String tipo = parser.helper.validarOperacionAritmetica(e1.tipo, e2.tipo, "-", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null) {
+            try {
+                if (tipo.equals(ParserHelper.T_INT)) {
+                    valor = Integer.parseInt(e1.valor.toString()) - Integer.parseInt(e2.valor.toString());
+                } else if (tipo.equals(ParserHelper.T_FLOAT)) {
+                    valor = Float.parseFloat(e1.valor.toString()) - Float.parseFloat(e2.valor.toString());
+                }
+            } catch (NumberFormatException ex) {
+                // Si hay error al convertir, dejamos el valor como null
+            }
+        }
+        RESULT = new ParserHelper.ExprResult(tipo, valor);
+    :}
   
   | expresion:e1 MULTIPLICACION expresion:e2
-    {: RESULT = parser.helper.validarOperacionAritmetica(e1, e2, "*", e1left + 1, e1right + 1); :}
+    {: 
+        String tipo = parser.helper.validarOperacionAritmetica(e1.tipo, e2.tipo, "*", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null) {
+            try {
+                if (tipo.equals(ParserHelper.T_INT)) {
+                    valor = Integer.parseInt(e1.valor.toString()) * Integer.parseInt(e2.valor.toString());
+                } else if (tipo.equals(ParserHelper.T_FLOAT)) {
+                    valor = Float.parseFloat(e1.valor.toString()) * Float.parseFloat(e2.valor.toString());
+                }
+            } catch (NumberFormatException ex) {
+                // Si hay error al convertir, dejamos el valor como null
+            }
+        }
+        RESULT = new ParserHelper.ExprResult(tipo, valor);
+    :}
   
   | expresion:e1 DIVISION expresion:e2
     {:
-        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
-            RESULT = ParserHelper.T_ERROR;
-        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
-            RESULT = ParserHelper.T_FLOAT;
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    // División siempre resulta en float
+                    valor = Float.parseFloat(e1.valor.toString()) / Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_FLOAT, valor);
         } else {
             parser.helper.reportSemanticError(
-                "Operador '/' no aplicable a tipos '" + e1 + "' y '" + e2 + "'",
+                "Operador '/' no aplicable a tipos '" + e1.tipo + "' y '" + e2.tipo + "'",
                 e1left + 1, e1right + 1
             );
-            RESULT = ParserHelper.T_ERROR;
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         }
     :}
   
   | expresion:e1 MODULO expresion:e2
     {:
-        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
-            RESULT = ParserHelper.T_ERROR;
-        } else if (e1.equals(ParserHelper.T_INT) && e2.equals(ParserHelper.T_INT)) {
-            RESULT = ParserHelper.T_INT;
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (e1.tipo.equals(ParserHelper.T_INT) && e2.tipo.equals(ParserHelper.T_INT)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Integer.parseInt(e1.valor.toString()) % Integer.parseInt(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_INT, valor);
         } else {
             parser.helper.reportSemanticError(
                 "Operador '%' solo aplicable a tipos 'int' y 'int', no a '" + 
-                e1 + "' y '" + e2 + "'",
+                e1.tipo + "' y '" + e2.tipo + "'",
                 e1left + 1, e1right + 1
             );
-            RESULT = ParserHelper.T_ERROR;
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         }
     :}
   
   | expresion:e1 AND expresion:e2
-    {: RESULT = parser.helper.validarOperacionLogica(e1, e2, "&&", e1left + 1, e1right + 1); :}
+    {: 
+        String tipo = parser.helper.validarOperacionLogica(e1.tipo, e2.tipo, "&&", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null && tipo.equals(ParserHelper.T_BOOL)) {
+            try {
+                valor = Boolean.parseBoolean(e1.valor.toString()) && Boolean.parseBoolean(e2.valor.toString());
+            } catch (Exception ex) {
+                // Si hay error al convertir, dejamos el valor como null
+            }
+        }
+        RESULT = new ParserHelper.ExprResult(tipo, valor);
+    :}
   
   | expresion:e1 OR expresion:e2
-    {: RESULT = parser.helper.validarOperacionLogica(e1, e2, "||", e1left + 1, e1right + 1); :}
+    {: 
+        String tipo = parser.helper.validarOperacionLogica(e1.tipo, e2.tipo, "||", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null && tipo.equals(ParserHelper.T_BOOL)) {
+            try {
+                valor = Boolean.parseBoolean(e1.valor.toString()) || Boolean.parseBoolean(e2.valor.toString());
+            } catch (Exception ex) {
+                // Si hay error al convertir, dejamos el valor como null
+            }
+        }
+        RESULT = new ParserHelper.ExprResult(tipo, valor);
+    :}
   
   | NOT expresion:e
     {:
-        if (e.equals(ParserHelper.T_ERROR)) {
-            RESULT = ParserHelper.T_ERROR;
-        } else if (parser.helper.esBooleano(e)) {
-            RESULT = ParserHelper.T_BOOL;
+        if (e.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esBooleano(e.tipo)) {
+            Object valor = null;
+            if (e.valor != null) {
+                try {
+                    valor = !Boolean.parseBoolean(e.valor.toString());
+                } catch (Exception ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor);
         } else {
             parser.helper.reportSemanticError(
-                "Operador '!' solo aplicable a tipo booleano, no a '" + e + "'",
+                "Operador '!' solo aplicable a tipo booleano, no a '" + e.tipo + "'",
                 eleft + 1, eright + 1
             );
-            RESULT = ParserHelper.T_ERROR;
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         }
     :}
   
   | expresion:e1 IGUAL expresion:e2
-    {: RESULT = parser.helper.validarComparacion(e1, e2, "==", e1left + 1, e1right + 1); :}
+    {: 
+        String tipo = parser.helper.validarComparacion(e1.tipo, e2.tipo, "==", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null && tipo.equals(ParserHelper.T_BOOL)) {
+            valor = e1.valor.toString().equals(e2.valor.toString());
+        }
+        RESULT = new ParserHelper.ExprResult(tipo, valor);
+    :}
   
   | expresion:e1 DIFERENCIA expresion:e2
-    {: RESULT = parser.helper.validarComparacion(e1, e2, "!=", e1left + 1, e1right + 1); :}
+    {: 
+        String tipo = parser.helper.validarComparacion(e1.tipo, e2.tipo, "!=", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null && tipo.equals(ParserHelper.T_BOOL)) {
+            valor = !e1.valor.toString().equals(e2.valor.toString());
+        }
+        RESULT = new ParserHelper.ExprResult(tipo, valor);
+    :}
   
   | expresion:e1 MENOR expresion:e2
     {:
-        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
-            RESULT = ParserHelper.T_ERROR;
-        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
-            RESULT = ParserHelper.T_BOOL;
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Float.parseFloat(e1.valor.toString()) < Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor);
         } else {
             parser.helper.reportSemanticError(
                 "Operador '<' solo aplicable a tipos numéricos, no a '" + 
-                e1 + "' y '" + e2 + "'",
+                e1.tipo + "' y '" + e2.tipo + "'",
                 e1left + 1, e1right + 1
             );
-            RESULT = ParserHelper.T_ERROR;
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         }
     :}
   
   | expresion:e1 MAYOR expresion:e2
     {:
-        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
-            RESULT = ParserHelper.T_ERROR;
-        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
-            RESULT = ParserHelper.T_BOOL;
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Float.parseFloat(e1.valor.toString()) > Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor);
         } else {
             parser.helper.reportSemanticError(
                 "Operador '>' solo aplicable a tipos numéricos, no a '" + 
-                e1 + "' y '" + e2 + "'",
+                e1.tipo + "' y '" + e2.tipo + "'",
                 e1left + 1, e1right + 1
             );
-            RESULT = ParserHelper.T_ERROR;
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         }
     :}
   
   | expresion:e1 MENOR_IGUAL expresion:e2
     {:
-        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
-            RESULT = ParserHelper.T_ERROR;
-        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
-            RESULT = ParserHelper.T_BOOL;
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Float.parseFloat(e1.valor.toString()) <= Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor);
         } else {
             parser.helper.reportSemanticError(
                 "Operador '<=' solo aplicable a tipos numéricos, no a '" + 
-                e1 + "' y '" + e2 + "'",
+                e1.tipo + "' y '" + e2.tipo + "'",
                 e1left + 1, e1right + 1
             );
-            RESULT = ParserHelper.T_ERROR;
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         }
     :}
   
   | expresion:e1 MAYOR_IGUAL expresion:e2
     {:
-        if (e1.equals(ParserHelper.T_ERROR) || e2.equals(ParserHelper.T_ERROR)) {
-            RESULT = ParserHelper.T_ERROR;
-        } else if (parser.helper.esNumerico(e1) && parser.helper.esNumerico(e2)) {
-            RESULT = ParserHelper.T_BOOL;
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Float.parseFloat(e1.valor.toString()) >= Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor);
         } else {
             parser.helper.reportSemanticError(
                 "Operador '>=' solo aplicable a tipos numéricos, no a '" + 
-                e1 + "' y '" + e2 + "'",
+                e1.tipo + "' y '" + e2.tipo + "'",
                 e1left + 1, e1right + 1
             );
-            RESULT = ParserHelper.T_ERROR;
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         }
     :}
   ;
