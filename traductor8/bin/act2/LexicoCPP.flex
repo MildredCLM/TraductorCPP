@@ -31,8 +31,6 @@ import java_cup.runtime.Symbol;
 /* ========= REGEX ======== */
 DECIMAL = -?[0-9]+[.][0-9]+
 ENTERO = -?[0-9]+
-CADENA   = \".*\"    // cadena entre comillas dobles
-CARACTER = '.'     // carácter entre comillas simples
 BOOLEAN = (true|false)
 ID = [a-zA-Z_][a-zA-Z0-9_]*
 %%
@@ -40,13 +38,6 @@ ID = [a-zA-Z_][a-zA-Z0-9_]*
 [ \t\n\r]+  { /* Ignorar espacios en blanco */ }
 /* ========= REGLAS LÉXICAS LITERALES ========= */
 
-{CADENA}  {
-                return simbolo(sym.CADENA, yytext());
-          }
-
-{CARACTER}    {
-                return simbolo(sym.CARACTER, yytext());
-          }
 
 {BOOLEAN}    {
                 return simbolo(sym.BOOLEAN, yytext());

@@ -17,7 +17,7 @@ import java_cup.runtime.Symbol;
  * <a href="http://www.jflex.de/">JFlex</a> 1.6.1
  * from the specification file <tt>src/act2/LexicoCPP.flex</tt>
  */
-public class LexicoCPP implements java_cup.runtime.Scanner, java_cup.runtime.Scanner {
+public class LexicoCPP implements java_cup.runtime.Scanner {
 
   /** This character denotes the end of file */
   public static final int YYEOF = -1;

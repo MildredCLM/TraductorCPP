@@ -1,2 +1,4 @@
- int a;
- a = 5;
+int a;       
+void miFuncion() {  
+    a = 5;    
+}

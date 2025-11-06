@@ -21,8 +21,8 @@ public class AnalizadorSintacticoJava {
 
             parser.parse();
 
-            System.out.println("Errores semánticos: " + parser.erroresSem);
-            System.out.println("Errores sintácticos: " + parser.erroresSint);
+            System.out.println("Errores semanticos: " + parser.erroresSem);
+            System.out.println("Errores sintacticos: " + parser.erroresSint);
             if (parser.erroresSem == 0 && parser.erroresSint == 0) {
                 System.out.println("Analisis realizado correctamente");
             }

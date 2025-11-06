@@ -41,7 +41,7 @@ parser code {:
     public void insertarSimbolo(String id, String tipo) {
         if (tablaDeSimbolos.isEmpty()) iniciarAmbito();
         
-        // --- CORRECCIÓN DE 'var' ---
+        
         java.util.HashMap<String, SymbolInfo> amb = tablaDeSimbolos.peek();
         
         if (amb.containsKey(id)) {
@@ -110,7 +110,6 @@ terminal COMA, PUNTOYCOMA, DOS_PUNTOS, PUNTO, QUESTION;
 terminal ID, ENTERO, DECIMAL, LITERAL_CADENA, LITERAL_CARACTER;
 terminal IFX;
 terminal ERROR;
-terminal CADENA, CARACTER;
 terminal A_SUMA, A_RESTA, A_MULTIPLICACION, A_DIVISION, A_MODULO;
 terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
 terminal TRY, CATCH;
@@ -138,6 +137,7 @@ start with programa;
 
 programa ::= lista_declaraciones
            | /* empty */
+          
            ;
 
 lista_declaraciones ::= lista_declaraciones declaracion
@@ -333,8 +333,6 @@ sentencia_expr ::= expresion PUNTOYCOMA ;
 expresion ::=
       ENTERO            {: RESULT = "int"; :}
     | DECIMAL           {: RESULT = "float"; :}
-    | CADENA            {: RESULT = "string"; :}
-    | CARACTER          {: RESULT = "char"; :}
     | BOOLEAN           {: RESULT = "bool"; :}
     | ID:id
       {:
