@@ -1,4 +1,11 @@
-int a;       
-void miFuncion() {  
-    a = 5;    
+int a;
+float b;
+string c;
+
+int d = 10;
+float e = d; 
+string f = "hello";
+
+void func_vacia() {
+    
 }

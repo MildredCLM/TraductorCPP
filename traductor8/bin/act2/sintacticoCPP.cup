@@ -8,10 +8,6 @@ import java.util.Stack;
 parser code {:
     protected java_cup.runtime.Symbol lastErrorToken;
 
-    // --- ¡ERROR BORRADO! ---
-    // (Aquí estaba el constructor 'public static Sintactico' que causaba el error 'duplicado')
-    // --- FIN ---
-
     public static final String T_INT="int", T_FLOAT="float", T_CHAR="char", T_STRING="string", T_BOOL="bool";
 
     public static class SymbolInfo {
@@ -98,7 +94,7 @@ parser code {:
     }
 :};
 
-// --- ESTO ESTÁ PERFECTO ---
+
 init with {: __init__(); :};
 
 terminal CLASS, PUBLIC, PRIVATE, PROTECTED, STATIC, VOID, IF, ELSE, WHILE, FOR, DO, SWITCH, CASE, DEFAULT, BREAK, CONTINUE, RETURN, NEW, THIS;
@@ -185,7 +181,7 @@ dec_funcion ::=
   | VOID ID:id PARENTESIS_APERTURA lista_parametros_opcional PARENTESIS_CIERRE
     LLAVE_APERTURA
       {:
-        // --- TU CÓDIGO CORRECTO ---
+       
         parser.insertarSimbolo((String)id,"void");
         parser.alcanceActual = "local";
         parser.tipoFuncionActual = "void";
@@ -226,14 +222,13 @@ lista_ids_con_asignacion ::= lista_ids_con_asignacion COMA id_con_asignacion_opc
                            ;
 
 id_con_asignacion_opcional ::= ID:id
-    // --- TU CÓDIGO CORRECTO ---
     {: parser.insertarSimbolo((String)id, parser.tipoActualDecl); :}
   | ID:id ASIGNACION expresion:e
     {:
         if (!parser.tiposCompatibles(parser.tipoActualDecl, e)) {
             parser.report_semantic_error("Error: asignación incompatible a '"+id+"'. Esperado "+parser.tipoActualDecl+", recibido "+e, null);
         }
-        // --- TU CÓDIGO CORRECTO ---
+ 
         parser.insertarSimbolo((String)id, parser.tipoActualDecl);
     :}
   ;
@@ -334,9 +329,10 @@ expresion ::=
       ENTERO            {: RESULT = "int"; :}
     | DECIMAL           {: RESULT = "float"; :}
     | BOOLEAN           {: RESULT = "bool"; :}
+    | LITERAL_CADENA    {: RESULT = "string"; :}
+    | LITERAL_CARACTER  {: RESULT = "char"; :}
     | ID:id
       {:
-          // --- TU CÓDIGO CORRECTO ---
           String t = parser.tipoDe((String)id);
           if (t==null){ parser.report_semantic_error("Error: identificador '"+id+"' no declarado.", null); RESULT="error_tipo"; }
           else RESULT = t;
