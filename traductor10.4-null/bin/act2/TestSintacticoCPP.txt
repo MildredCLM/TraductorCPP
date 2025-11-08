@@ -1,0 +1,10 @@
+int suma(int a, int b) {
+    return a + b;
+}
+
+float promedio(float x, float y) {
+    return (x + y) / 2.0;
+}
+
+int resultado = suma(10, 20);
+float prom = promedio(2.5, 7.5);
