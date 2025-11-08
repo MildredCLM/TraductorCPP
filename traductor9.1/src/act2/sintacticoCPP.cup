@@ -136,7 +136,7 @@ id_con_asignacion_opcional ::=
         if (!parser.helper.tiposCompatibles(parser.helper.tipoActualDecl, e.tipo)) {
             parser.helper.reportSemanticError(
                 "Tipo incompatible en inicialización de '" + id_name + 
-                "'. Se esperaba '" + parser.helper.tipoActualDecl + "' pero se recibió '" + e + "'",
+                "'. Se esperaba '" + parser.helper.tipoActualDecl + "' pero se recibió '" + e.tipo + "'",
                 id_nameleft + 1, id_nameright + 1
             );
         }
