@@ -30,7 +30,7 @@ public class ParserHelper {
         public String tipo, alcance;
         public Object valor;
         public int linea, columna;
-        public boolean esFuncion;
+        public boolean esFuncion = false;
         public java.util.List<String> tiposParametros;
         public java.util.List<String> nombresParametros;
 
