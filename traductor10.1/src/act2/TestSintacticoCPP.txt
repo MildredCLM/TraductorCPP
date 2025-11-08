@@ -1,0 +1,35 @@
+int var_int = 10;
+float var_float = 5.0;
+string var_string = "hola";
+bool var_bool = true;
+
+void test_casos_correctos() {
+    
+    
+    if (var_bool) {
+        int x = 1; 
+    }
+    
+    if (true) {
+        int y = 2;
+    } else {
+        int y = 3; 
+    }
+
+
+    if (var_int > 0) {
+        var_int = 1;
+    }
+
+
+    while (var_bool) {
+        int z = 10; 
+        var_bool = false; 
+    }
+
+
+    for (int i = 0; i < 10; i = i + 1) {
+        int k = 1; 
+    }
+
+}
