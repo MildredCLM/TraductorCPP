@@ -1,0 +1,29 @@
+int a = 20;
+int b = 5;
+
+void testControl() {
+
+    if (a > b) {
+
+        a = 10;
+
+    } else {
+
+        b = 10;
+
+    }
+
+}
+
+
+int k = 20;
+int suma(int c, int d) {
+    return c + d;
+}
+
+float promedio(float x, float y) {
+    return (x + y) / 2.0;
+}
+
+int resultado = suma(10, 20);
+float prom = promedio(2.5, 7.5);
