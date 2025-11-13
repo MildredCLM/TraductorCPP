@@ -1,0 +1,42 @@
+int var_global_int = 10;
+float var_global_float = 5.5;
+bool var_global_bool = true;
+string var_global_string = "hola";
+char var_global_char = 'A';
+
+int sumar(int a, int b) {
+    return a + b;
+}
+
+void imprimir(string msg) {
+    
+}
+
+bool esMayor(int a, int b) {
+    return a > b;
+}
+
+void prueba_sintaxis_correcta() {
+    if (var_global_bool) {
+        int x = 1;
+    } else {
+        int y = 2;
+    }
+
+    while (var_global_int > 0) {
+        var_global_int = var_global_int - 1;
+    }
+
+    for (int i = 0; i < 10; i = i + 1) {
+        int k = 1;
+    }
+}
+
+
+
+
+
+
+
+
+
