@@ -1,0 +1,54 @@
+int var_global_int = 10;
+float var_global_float = 5.5;
+bool var_global_bool = true;
+string var_global_string = "hola";
+char var_global_char = 'A';
+
+int sumar(int a, int b) {
+    return a + b;
+}
+
+void imprimir(string msg) {
+    
+}
+
+bool esMayor(int a, int b) {
+    return a > b;
+}
+
+void prueba_anidacion() {
+    int x = 20;
+    if (x > 10) {
+        if (esMayor(x, 15)) {
+            imprimir("x es mayor que 15"); 
+        } else {
+            imprimir("x no es mayor que 15"); 
+        }
+    }
+
+    for (int i = 0; i < 2; i = i + 1) {
+        bool local = true;
+        while (local) {
+            if (i == 1) {
+                local = false; 
+            }
+        }
+    }
+}
+
+int prueba_llamada_correcta() {
+    int resultado = sumar(5, 3); 
+    bool mayor = esMayor(var_global_int, 5); 
+    imprimir("ok"); 
+    return resultado;
+}
+
+
+
+
+
+
+
+
+
+
