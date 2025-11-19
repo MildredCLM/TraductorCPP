@@ -1,0 +1,18 @@
+int x = 10;
+int x = 20;
+
+int suma(int a, int b) {
+    int resultado = a + "texto";
+    return resultado;
+}
+
+void main() {
+    int z;
+    z = variable_no_declarada + 5;
+    
+    if (10) {
+        int w = 15;
+    }
+    
+    return;
+}

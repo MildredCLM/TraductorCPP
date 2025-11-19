@@ -1,0 +1,19 @@
+class Test {
+    int x;
+    string "texto sin cierre;
+    int x;
+    
+    int suma(int a, int b) {
+        int resultado = a + "texto";
+        return resultado;
+    }
+    
+    void main() {
+        int z;
+        z = a + 5;
+        
+        if (10) {
+            int w = 15;
+        }
+    }
+}

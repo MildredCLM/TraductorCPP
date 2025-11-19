@@ -1,0 +1,4 @@
+float abc = 10.;
+int 9abc = 5;
+string mal = "cadena;
+char mal2 = "A;

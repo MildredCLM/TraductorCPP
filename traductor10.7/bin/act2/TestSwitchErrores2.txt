@@ -1,0 +1,32 @@
+void switch_tipo_string_error() {
+    string texto = "hola";
+    
+    switch (texto) {
+        case "A":
+            int val = 1;
+        default:
+            int otro = 2;
+    }
+}
+
+void switch_caso_expr_error() {
+    int num = 10;
+    switch (num) {
+        case 2 + 3:
+            int x = 10;
+        default:
+            int y = 20;
+    }
+}
+
+void switch_valido() {
+    int numero = 5;
+    switch (numero) {
+        case 1:
+            int res1 = 100;
+        case 5:
+            int res5 = 500;
+        default:
+            int resDefault = -1;
+    }
+}

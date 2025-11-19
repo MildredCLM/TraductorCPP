@@ -1,0 +1,10 @@
+char var_char_a = 'A';
+char var_char_b = 'Z';
+char var_char_numero = '5';
+char var_char_especial = '!';
+char var_char_escape = '\n';
+
+void prueba_chars() {
+    char x = 'X';
+    char y = 'Y';
+}

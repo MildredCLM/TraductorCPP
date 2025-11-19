@@ -1,0 +1,3 @@
+char mal_char1 = 'A;
+char mal_char2 = 'B
+char bueno = 'C';

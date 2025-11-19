@@ -1,0 +1,49 @@
+void prueba_switch() {
+    int opcion = 2;
+    
+    switch (opcion) {
+        case 1:
+            int x = 10;
+        case 2:
+            int y = 20;
+        case 3:
+            int z = 30;
+        default:
+            int w = 0;
+    }
+}
+
+void switch_char() {
+    char letra = 'A';
+    
+    switch (letra) {
+        case 'A':
+            int val_a = 65;
+        case 'B':
+            int val_b = 66;
+        default:
+            int val_default = -1;
+    }
+}
+
+void switch_bool() {
+    bool bandera = true;
+    
+    switch (bandera) {
+        case true:
+            int caso_verdadero = 1;
+        case false:
+            int caso_falso = 0;
+    }
+}
+
+void switch_sin_default() {
+    int numero = 5;
+    
+    switch (numero) {
+        case 5:
+            int resultado = numero * 2;
+        case 10:
+            resultado = numero * 3;
+    }
+}
