@@ -1,0 +1,25 @@
+ERROR SINTACTICO: Token inesperado '// 1. Comparator of 3 numbers' en l├¡nea 2, columna 2.
+ERROR SINTACTICO: Error sintactico en declaraci├│n. Saltando hasta ';'..
+CODEGEN: b = 20
+CODEGEN: c = 15
+ERROR SINTACTICO: Token inesperado 'if' en l├¡nea 10, columna 2.
+ERROR SINTACTICO: Error sintactico en declaraci├│n. Saltando hasta ';'..
+ERROR SINTACTICO: Token inesperado 'for' en l├¡nea 45, columna 2.
+ERROR SINTACTICO: Error sintactico en declaraci├│n. Saltando hasta ';'..
+
+=== TABLA DE SIMBOLOS ===
+Simbolo                   Tipo         Linea    Columna  Alcance                        Valor          
+--------------------------------------------------------------------------------------------------------------
+b                         int          4        6        Global                         20             
+c                         int          5        6        Global                         15             
+mayor                     int          6        6        Global                         null           
+menor                     int          7        6        Global                         null           
+medio                     int          8        6        Global                         null           
+i                         int          44       6        Global                         null           
+--------------------------------------------------------------------------------------------------------------
+
+=== RESULTADOS ===
+Errores semanticos: 0
+Errores sintacticos: 6
+Errores lexicos: 0
+Se encontraron errores en el analisis

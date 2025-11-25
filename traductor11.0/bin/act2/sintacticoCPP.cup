@@ -1,0 +1,723 @@
+package act2;
+
+import java_cup.runtime.*;
+import java.io.*;
+import act2.ParserHelper;
+
+parser code {:
+    public ParserHelper helper = new ParserHelper();
+    
+    public void report_error(String message, Object info) {
+        helper.reportSyntaxError(message, (Symbol) info);
+    }
+    
+    public void syntax_error(Symbol cur_token) {
+        helper.reportSyntaxError("Token inesperado", cur_token);
+    }
+
+    public void unrecovered_syntax_error(Symbol cur_token) throws java.lang.Exception {
+        
+        helper.reportSyntaxError("Error sintactico irrecuperable. Se detendra el analisis de esta estructura", cur_token);
+    }
+:};
+
+init with {: :};
+
+terminal CLASS, PUBLIC, PRIVATE, PROTECTED, STATIC, VOID;
+terminal IF, ELSE, WHILE, FOR, DO, SWITCH, CASE, DEFAULT, BREAK, CONTINUE, RETURN, PRINT;
+terminal NEW, THIS, TRY, CATCH;
+terminal INT, FLOAT, LONG, DOUBLE, BOOL, CHAR, STRING, NULL, BOOLEAN;
+terminal INCREMENTO, DECREMENTO, SUMA, RESTA, MULTIPLICACION, DIVISION, MODULO;
+terminal ASIGNACION, IGUAL, DIFERENCIA, MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL;
+terminal NOT, AND, OR;
+terminal PARENTESIS_APERTURA, PARENTESIS_CIERRE;
+terminal LLAVE_APERTURA, LLAVE_CIERRE;
+terminal CORCHETE_APERTURA, CORCHETE_CIERRE;
+terminal COMA, PUNTOYCOMA, DOS_PUNTOS, PUNTO, QUESTION;
+terminal String ID, ENTERO, DECIMAL, LITERAL_CADENA, LITERAL_CARACTER;
+terminal A_SUMA, A_RESTA, A_MULTIPLICACION, A_DIVISION, A_MODULO;
+terminal COMENTARIO_LINEA, COMENTARIO_LINEAS;
+terminal ERROR, IFX;
+terminal LEXICAL_ERROR;
+
+non terminal programa, lista_declaraciones, declaracion;
+non terminal dec_clase, cuerpo_clase, lista_miembros, miembro;
+non terminal dec_funcion, lista_parametros_opcional, lista_parametros, parametro;
+non terminal String tipo_dato;
+non terminal dec_variable, dec_variable_lista, lista_ids_con_asignacion, id_con_asignacion_opcional;
+non terminal sentencia, bloque_sentencias, lista_sentencias;
+non terminal sentencia_if, sentencia_while, sentencia_for, sentencia_return, sentencia_print;
+non terminal sentencia_switch, lista_casos, caso, caso_default;
+non terminal sentencia_asignacion, sentencia_expr;
+non terminal for_init, for_condicion, for_actualizacion, asignacion_expr;
+/*non terminal String expresion;*/
+non terminal ParserHelper.ExprResult expresion;
+non terminal java.util.List<ParserHelper.ExprResult> lista_argumentos;
+non terminal java.util.List<ParserHelper.ExprResult> lista_argumentos_no_vacia;
+
+precedence right ASIGNACION;
+precedence left OR;
+precedence left AND;
+precedence left IGUAL, DIFERENCIA;
+precedence left MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL;
+precedence left SUMA, RESTA;
+precedence left MULTIPLICACION, DIVISION, MODULO;
+precedence right NOT, INCREMENTO, DECREMENTO;
+precedence nonassoc ELSE;
+
+start with programa;
+
+programa ::= lista_declaraciones | ;
+
+lista_declaraciones ::= lista_declaraciones declaracion | declaracion ;
+
+declaracion ::= dec_clase 
+    | dec_funcion 
+    | dec_variable 
+    | error PUNTOYCOMA 
+              {: parser.helper.reportSyntaxError("Error sintactico en declaración. Saltando hasta ';'.", null); :}
+            | LEXICAL_ERROR PUNTOYCOMA
+              {: /* El error lexico ya fue reportado por el lexer. Solo nos recuperamos. */ :}
+    ;
+
+dec_clase ::= CLASS ID LLAVE_APERTURA cuerpo_clase LLAVE_CIERRE PUNTOYCOMA
+            | CLASS ID LLAVE_APERTURA cuerpo_clase LLAVE_CIERRE ;
+
+cuerpo_clase ::= lista_miembros | ;
+
+lista_miembros ::= lista_miembros miembro | miembro ;
+
+miembro ::= dec_funcion | dec_variable ;
+
+dec_funcion ::=
+    tipo_dato:t ID:id_name
+    {:
+        // Registramos la funcion antes de procesar los parámetros
+        RESULT = parser.helper.registrarFuncion(id_name, t, id_nameleft + 1, id_nameright + 1);
+        parser.helper.alcanceActual = "local_" + id_name;
+        parser.helper.tipoFuncionActual = t;
+        parser.helper.iniciarAmbito();
+    :}
+    PARENTESIS_APERTURA lista_parametros_opcional:params PARENTESIS_CIERRE
+    LLAVE_APERTURA 
+    bloque_sentencias
+    LLAVE_CIERRE
+    {:
+        parser.helper.finalizarAmbito();
+        parser.helper.alcanceActual = "global";
+        parser.helper.tipoFuncionActual = null;
+    :}
+  | VOID ID:id_name
+    {:
+        // Registramos la funcion antes de procesar los parámetros
+        RESULT = parser.helper.registrarFuncion(id_name, ParserHelper.T_VOID, id_nameleft + 1, id_nameright + 1);
+        parser.helper.alcanceActual = "local_" + id_name;
+        parser.helper.tipoFuncionActual = ParserHelper.T_VOID;
+        parser.helper.iniciarAmbito();
+    :}
+    PARENTESIS_APERTURA lista_parametros_opcional:params PARENTESIS_CIERRE
+    LLAVE_APERTURA
+    bloque_sentencias
+    LLAVE_CIERRE
+    {:
+        parser.helper.finalizarAmbito();
+        parser.helper.alcanceActual = "global";
+        parser.helper.tipoFuncionActual = null;
+    :}
+  ;
+
+lista_parametros_opcional ::= lista_parametros | /* vacío */ ;
+
+lista_parametros ::= lista_parametros:lista COMA parametro:param 
+  | parametro:param ;
+
+parametro ::= tipo_dato:t ID:id_name
+    {:
+        // Inserta el parametro en el ámbito local de la funcion
+        parser.helper.insertarSimbolo(id_name, t, id_nameleft + 1, id_nameright + 1, null);
+        
+        // Busca la funcion actual y agrega el parámetro
+        String funcName = parser.helper.alcanceActual.substring("local_".length());
+        ParserHelper.SymbolInfo func = parser.helper.buscarSimboloInfo(funcName);
+        if (func != null) {
+            func.agregarParametro(id_name, t);
+        }
+        
+        RESULT = new ParserHelper.SymbolInfo(t, parser.helper.alcanceActual, id_nameleft + 1, id_nameright + 1, null);
+    :} ;
+
+lista_argumentos ::= /* vacío */ 
+    {: RESULT = new java.util.ArrayList<>(); :}
+  | lista_argumentos_no_vacia:args 
+    {: RESULT = args; :}
+  ;
+
+lista_argumentos_no_vacia ::= expresion:e 
+    {: 
+        RESULT = new java.util.ArrayList<>();
+        RESULT.add(e); 
+    :}
+  | lista_argumentos_no_vacia:args COMA expresion:e
+    {: 
+        args.add(e); 
+        RESULT = args; 
+    :}
+  ;
+
+tipo_dato ::= INT    {: parser.helper.tipoActualDecl=ParserHelper.T_INT;    RESULT=ParserHelper.T_INT;    :}
+            | FLOAT  {: parser.helper.tipoActualDecl=ParserHelper.T_FLOAT;  RESULT=ParserHelper.T_FLOAT;  :}
+            | CHAR   {: parser.helper.tipoActualDecl=ParserHelper.T_CHAR;   RESULT=ParserHelper.T_CHAR;   :}
+            | STRING {: parser.helper.tipoActualDecl=ParserHelper.T_STRING; RESULT=ParserHelper.T_STRING; :}
+            | BOOL   {: parser.helper.tipoActualDecl=ParserHelper.T_BOOL;   RESULT=ParserHelper.T_BOOL;   :}
+            ;
+
+dec_variable ::= tipo_dato dec_variable_lista PUNTOYCOMA ;
+
+dec_variable_lista ::= lista_ids_con_asignacion ;
+
+lista_ids_con_asignacion ::= lista_ids_con_asignacion COMA id_con_asignacion_opcional
+                           | id_con_asignacion_opcional ;
+
+id_con_asignacion_opcional ::= 
+    ID:id_name
+    {: parser.helper.insertarSimbolo(id_name, parser.helper.tipoActualDecl, id_nameleft + 1, id_nameright + 1, null); :}
+  | ID:id_name ASIGNACION expresion:e
+    {:
+        if (!parser.helper.tiposCompatibles(parser.helper.tipoActualDecl, e.tipo)) {
+            parser.helper.reportSemanticError(
+                "Tipo incompatible en inicializacion de '" + id_name + 
+                "'. Se esperaba '" + parser.helper.tipoActualDecl + "' pero se recibio '" + e.tipo + "'",
+                id_nameleft + 1, id_nameright + 1
+            );
+        }
+        parser.helper.insertarSimbolo(id_name, parser.helper.tipoActualDecl, id_nameleft + 1, id_nameright + 1, e.valor);
+        parser.helper.generarCodigo(id_name + " = " + e.direccion);
+    :}
+  ;
+
+bloque_sentencias ::= lista_sentencias | ;
+
+lista_sentencias ::= lista_sentencias sentencia | sentencia ;
+
+sentencia ::=
+      LLAVE_APERTURA {: parser.helper.iniciarAmbito(); :} 
+      bloque_sentencias 
+      LLAVE_CIERRE {: parser.helper.finalizarAmbito(); :}
+    | sentencia_if
+    | sentencia_while
+    | sentencia_for
+    | sentencia_switch
+    | sentencia_return
+    | sentencia_asignacion
+    | sentencia_expr
+    | dec_variable
+    | sentencia_print
+    | BREAK PUNTOYCOMA
+    | CONTINUE PUNTOYCOMA
+    ;
+
+sentencia_if ::=
+    IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia
+    {:
+        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La condicion del 'if' debe ser de tipo booleano, no '" + cond.tipo + "'",
+                condleft + 1, condright + 1
+            );
+        }
+    :}
+  | IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia ELSE sentencia
+    {:
+        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La condicion del 'if' debe ser de tipo booleano, no '" + cond.tipo + "'",
+                condleft + 1, condright + 1
+            );
+        }
+    :}
+  ;
+
+sentencia_while ::= 
+    WHILE PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia
+    {:
+        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La condicion del 'while' debe ser de tipo booleano, no '" + cond.tipo + "'",
+                condleft + 1, condright + 1
+            );
+        }
+    :}
+  ;
+
+sentencia_for ::= 
+    FOR PARENTESIS_APERTURA for_init PUNTOYCOMA for_condicion PUNTOYCOMA 
+    for_actualizacion PARENTESIS_CIERRE sentencia ;
+
+for_init ::= tipo_dato dec_variable_lista
+           | asignacion_expr
+           | ;
+
+for_condicion ::= 
+    expresion:cond
+    {:
+        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La condicion del 'for' debe ser de tipo booleano, no '" + cond.tipo + "'",
+                condleft + 1, condright + 1
+            );
+        }
+    :}
+  | ;
+
+for_actualizacion ::= asignacion_expr 
+                    | ID:id INCREMENTO {: parser.helper.generarCodigo(id + "++"); :}
+                    | ID:id DECREMENTO {: parser.helper.generarCodigo(id + "--"); :}
+                    | ;
+
+asignacion_expr ::= 
+    ID:id_name ASIGNACION expresion:exprT
+    {:
+        String t = parser.helper.tipoDe(id_name);
+        if (t == null){
+            parser.helper.reportSemanticError("Identificador '"+id_name+"' no declarado", 
+                                            id_nameleft + 1, id_nameright + 1);
+        } else if (!parser.helper.tiposCompatibles(t, exprT.tipo)){
+            parser.helper.reportSemanticError(
+                "Tipo incompatible en asignacion a '"+id_name+
+                "'. Se esperaba '"+t+"' pero se recibio '"+exprT.tipo+"'",
+                id_nameleft + 1, id_nameright + 1
+            );
+        } else {
+            ParserHelper.SymbolInfo info = parser.helper.buscarSimboloInfo(id_name);
+            if (info != null){
+                info.valor = exprT.valor;
+            }
+            parser.helper.generarCodigo(id_name + " = " + exprT.direccion);
+        }
+    :}
+  ;
+
+sentencia_asignacion ::= asignacion_expr PUNTOYCOMA ;
+
+sentencia_switch ::=
+    SWITCH PARENTESIS_APERTURA expresion:expr PARENTESIS_CIERRE LLAVE_APERTURA lista_casos:casos LLAVE_CIERRE
+    {:    
+        // Validar que la expresion sea de tipo compatible (int, char, bool)
+        if (!expr.tipo.equals(ParserHelper.T_INT) && 
+            !expr.tipo.equals(ParserHelper.T_CHAR) && 
+            !expr.tipo.equals(ParserHelper.T_BOOL) &&
+            !expr.tipo.equals(ParserHelper.T_ERROR)) {
+            parser.helper.reportSemanticError(
+                "La expresion del 'switch' debe ser de tipo int, char o bool, no '" + expr.tipo + "'",
+                exprleft + 1, exprright + 1
+            );
+        }
+    :}
+  ;
+
+lista_casos ::= lista_casos caso | caso | lista_casos caso_default | caso_default ;
+
+caso ::=
+    CASE expresion:val DOS_PUNTOS bloque_sentencias
+    {:    
+        // Los valores de case deben ser constantes
+        if (val.valor == null) {
+            parser.helper.reportSemanticError(
+                "El valor del 'case' debe ser una constante, no una expresion compleja",
+                valleft + 1, valright + 1
+            );
+        }
+    :}
+  ;
+
+caso_default ::=
+    DEFAULT DOS_PUNTOS bloque_sentencias
+  ;
+
+sentencia_return ::=
+    RETURN expresion:e PUNTOYCOMA
+    {:
+        if (parser.helper.tipoFuncionActual == null){
+            parser.helper.reportSemanticError("'return' fuera de una funcion", 
+                                            eleft + 1, eright + 1);
+        } else if (ParserHelper.T_VOID.equals(parser.helper.tipoFuncionActual)) {
+            parser.helper.reportSemanticError("'return' con valor en funcion void", 
+                                            eleft + 1, eright + 1);
+        } else if (!parser.helper.tiposCompatibles(parser.helper.tipoFuncionActual, e.tipo)) {
+            parser.helper.reportSemanticError(
+                "Tipo de retorno incompatible. Se esperaba '"+parser.helper.tipoFuncionActual+
+                "' pero se encontro '"+e.tipo+"'",
+                eleft + 1, eright + 1
+            );
+        }
+    :}
+  | RETURN PUNTOYCOMA
+    {:
+        if (parser.helper.tipoFuncionActual != null && !ParserHelper.T_VOID.equals(parser.helper.tipoFuncionActual)){
+            parser.helper.reportSemanticError(
+                "Falta valor de retorno en funcion de tipo '"+parser.helper.tipoFuncionActual+"'",
+                0, 0
+            );
+        }
+    :}
+  ;
+
+sentencia_expr ::= expresion PUNTOYCOMA ;
+
+sentencia_print ::= PRINT PARENTESIS_APERTURA expresion:e PARENTESIS_CIERRE PUNTOYCOMA
+    {:
+        parser.helper.generarCodigo("print " + e.direccion);
+    :}
+    ;
+
+expresion ::=
+   ENTERO:val          {: RESULT = new ParserHelper.ExprResult(ParserHelper.T_INT, val); :}
+| DECIMAL:val         {: RESULT = new ParserHelper.ExprResult(ParserHelper.T_FLOAT, val); :}
+| LITERAL_CADENA:val  {: RESULT = new ParserHelper.ExprResult(ParserHelper.T_STRING, val); :}
+| LITERAL_CARACTER:val{: RESULT = new ParserHelper.ExprResult(ParserHelper.T_CHAR, val); :}
+| BOOLEAN:val         {: RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, val); :}
+| ID:id_name PARENTESIS_APERTURA lista_argumentos:args PARENTESIS_CIERRE
+    {:
+        String tipoRetorno = parser.helper.validarLlamadaFuncion(id_name, args, id_nameleft + 1, id_nameright + 1);
+        RESULT = new ParserHelper.ExprResult(tipoRetorno, null);
+    :}
+  
+  | ID:id_name
+    {:
+        String t = parser.helper.tipoDe(id_name);
+        if (t == null) {
+            parser.helper.reportSemanticError("Identificador '"+id_name+"' no declarado", 
+                                            id_nameleft + 1, id_nameright + 1);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else {
+            ParserHelper.SymbolInfo info = parser.helper.buscarSimboloInfo(id_name);
+            RESULT = new ParserHelper.ExprResult(t, info.valor, id_name);
+        }
+    :}
+  
+  | PARENTESIS_APERTURA expresion:e PARENTESIS_CIERRE {: RESULT = e; :}
+  
+  | expresion:e1 SUMA expresion:e2
+    {:
+        if (e1.tipo.equals(ParserHelper.T_STRING) || e2.tipo.equals(ParserHelper.T_STRING)) {
+            if (e1.tipo.equals(ParserHelper.T_STRING) && e2.tipo.equals(ParserHelper.T_STRING)) {
+                String temp = parser.helper.nuevaTemporal();
+                parser.helper.generarCodigo(temp + " = " + e1.direccion + " + " + e2.direccion);
+                RESULT = new ParserHelper.ExprResult(ParserHelper.T_STRING, e1.valor.toString() + e2.valor.toString(), temp);
+            } else {
+                parser.helper.reportSemanticError(
+                    "No se puede concatenar string con tipo '" + 
+                    (e1.tipo.equals(ParserHelper.T_STRING) ? e2.tipo : e1.tipo) + "'",
+                    e1left + 1, e1right + 1
+                );
+                RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+            }
+        } else {
+            String tipo = parser.helper.validarOperacionAritmetica(e1.tipo, e2.tipo, "+", e1left + 1, e1right + 1);
+            // calcular el valor real si ambos son literales
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    if (tipo.equals(ParserHelper.T_INT)) {
+                        valor = Integer.parseInt(e1.valor.toString()) + Integer.parseInt(e2.valor.toString());
+                    } else if (tipo.equals(ParserHelper.T_FLOAT)) {
+                        valor = Float.parseFloat(e1.valor.toString()) + Float.parseFloat(e2.valor.toString());
+                    }
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + e1.direccion + " + " + e2.direccion);
+            RESULT = new ParserHelper.ExprResult(tipo, valor, temp);
+        }
+    :}
+  
+  | expresion:e1 RESTA expresion:e2
+    {: 
+        String tipo = parser.helper.validarOperacionAritmetica(e1.tipo, e2.tipo, "-", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null) {
+            try {
+                if (tipo.equals(ParserHelper.T_INT)) {
+                    valor = Integer.parseInt(e1.valor.toString()) - Integer.parseInt(e2.valor.toString());
+                } else if (tipo.equals(ParserHelper.T_FLOAT)) {
+                    valor = Float.parseFloat(e1.valor.toString()) - Float.parseFloat(e2.valor.toString());
+                }
+            } catch (NumberFormatException ex) {
+                // Si hay error al convertir, dejamos el valor como null
+            }
+        }
+        String temp = parser.helper.nuevaTemporal();
+        parser.helper.generarCodigo(temp + " = " + e1.direccion + " - " + e2.direccion);
+        RESULT = new ParserHelper.ExprResult(tipo, valor, temp);
+    :}
+  
+  | expresion:e1 MULTIPLICACION expresion:e2
+    {: 
+        String tipo = parser.helper.validarOperacionAritmetica(e1.tipo, e2.tipo, "*", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null) {
+            try {
+                if (tipo.equals(ParserHelper.T_INT)) {
+                    valor = Integer.parseInt(e1.valor.toString()) * Integer.parseInt(e2.valor.toString());
+                } else if (tipo.equals(ParserHelper.T_FLOAT)) {
+                    valor = Float.parseFloat(e1.valor.toString()) * Float.parseFloat(e2.valor.toString());
+                }
+            } catch (NumberFormatException ex) {
+                // Si hay error al convertir, deja el valor como null
+            }
+        }
+        String temp = parser.helper.nuevaTemporal();
+        parser.helper.generarCodigo(temp + " = " + e1.direccion + " * " + e2.direccion);
+        RESULT = new ParserHelper.ExprResult(tipo, valor, temp);
+    :}
+  
+  | expresion:e1 DIVISION expresion:e2
+    {:
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    // División siempre resulta en float
+                    valor = Float.parseFloat(e1.valor.toString()) / Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, deja valor como null
+                }
+            }
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + e1.direccion + " / " + e2.direccion);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_FLOAT, valor, temp);
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '/' no aplicable a tipos '" + e1.tipo + "' y '" + e2.tipo + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+  
+  | expresion:e1 MODULO expresion:e2
+    {:
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (e1.tipo.equals(ParserHelper.T_INT) && e2.tipo.equals(ParserHelper.T_INT)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Integer.parseInt(e1.valor.toString()) % Integer.parseInt(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir deja valor como null
+                }
+            }
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + e1.direccion + " % " + e2.direccion);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_INT, valor, temp);
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '%' solo aplicable a tipos 'int' y 'int', no a '" + 
+                e1.tipo + "' y '" + e2.tipo + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+  
+  | expresion:e1 AND expresion:e2
+    {: 
+        String tipo = parser.helper.validarOperacionLogica(e1.tipo, e2.tipo, "&&", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null && tipo.equals(ParserHelper.T_BOOL)) {
+            try {
+                valor = Boolean.parseBoolean(e1.valor.toString()) && Boolean.parseBoolean(e2.valor.toString());
+            } catch (Exception ex) {
+                
+            }
+        }
+        String temp = parser.helper.nuevaTemporal();
+        parser.helper.generarCodigo(temp + " = " + e1.direccion + " && " + e2.direccion);
+        RESULT = new ParserHelper.ExprResult(tipo, valor, temp);
+    :}
+  
+  | expresion:e1 OR expresion:e2
+    {: 
+        String tipo = parser.helper.validarOperacionLogica(e1.tipo, e2.tipo, "||", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null && tipo.equals(ParserHelper.T_BOOL)) {
+            try {
+                valor = Boolean.parseBoolean(e1.valor.toString()) || Boolean.parseBoolean(e2.valor.toString());
+            } catch (Exception ex) {
+                // Si hay error al convertir, dejamos el valor como null
+            }
+        }
+        String temp = parser.helper.nuevaTemporal();
+        parser.helper.generarCodigo(temp + " = " + e1.direccion + " || " + e2.direccion);
+        RESULT = new ParserHelper.ExprResult(tipo, valor, temp);
+    :}
+  
+  | NOT expresion:e
+    {:
+        if (e.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esBooleano(e.tipo)) {
+            Object valor = null;
+            if (e.valor != null) {
+                try {
+                    valor = !Boolean.parseBoolean(e.valor.toString());
+                } catch (Exception ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = ! " + e.direccion);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor, temp);
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '!' solo aplicable a tipo booleano, no a '" + e.tipo + "'",
+                eleft + 1, eright + 1
+            );
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+  
+  | expresion:e1 IGUAL expresion:e2
+    {: 
+        String tipo = parser.helper.validarComparacion(e1.tipo, e2.tipo, "==", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null && tipo.equals(ParserHelper.T_BOOL)) {
+            valor = e1.valor.toString().equals(e2.valor.toString());
+        }
+        String temp = parser.helper.nuevaTemporal();
+        parser.helper.generarCodigo(temp + " = " + e1.direccion + " == " + e2.direccion);
+        RESULT = new ParserHelper.ExprResult(tipo, valor, temp);
+    :}
+  
+  | expresion:e1 DIFERENCIA expresion:e2
+    {: 
+        String tipo = parser.helper.validarComparacion(e1.tipo, e2.tipo, "!=", e1left + 1, e1right + 1);
+        Object valor = null;
+        if (e1.valor != null && e2.valor != null && tipo.equals(ParserHelper.T_BOOL)) {
+            valor = !e1.valor.toString().equals(e2.valor.toString());
+        }
+        String temp = parser.helper.nuevaTemporal();
+        parser.helper.generarCodigo(temp + " = " + e1.direccion + " != " + e2.direccion);
+        RESULT = new ParserHelper.ExprResult(tipo, valor, temp);
+    :}
+  
+  | expresion:e1 MENOR expresion:e2
+    {:
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Float.parseFloat(e1.valor.toString()) < Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir queda como null
+                }
+            }
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + e1.direccion + " < " + e2.direccion);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor, temp);
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '<' solo aplicable a tipos numericos, no a '" + 
+                e1.tipo + "' y '" + e2.tipo + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+  
+  | expresion:e1 MAYOR expresion:e2
+    {:
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Float.parseFloat(e1.valor.toString()) > Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, dejamos el valor como null
+                }
+            }
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + e1.direccion + " > " + e2.direccion);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor, temp);
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '>' solo aplicable a tipos numericos, no a '" + 
+                e1.tipo + "' y '" + e2.tipo + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+  
+  | expresion:e1 MENOR_IGUAL expresion:e2
+    {:
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Float.parseFloat(e1.valor.toString()) <= Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir, deja valor como null
+                }
+            }
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + e1.direccion + " <= " + e2.direccion);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor, temp);
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '<=' solo aplicable a tipos numericos, no a '" + 
+                e1.tipo + "' y '" + e2.tipo + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+  
+  | expresion:e1 MAYOR_IGUAL expresion:e2
+    {:
+        if (e1.tipo.equals(ParserHelper.T_ERROR) || e2.tipo.equals(ParserHelper.T_ERROR)) {
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        } else if (parser.helper.esNumerico(e1.tipo) && parser.helper.esNumerico(e2.tipo)) {
+            Object valor = null;
+            if (e1.valor != null && e2.valor != null) {
+                try {
+                    valor = Float.parseFloat(e1.valor.toString()) >= Float.parseFloat(e2.valor.toString());
+                } catch (NumberFormatException ex) {
+                    // Si hay error al convertir,  valor como null
+                }
+            }
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + e1.direccion + " >= " + e2.direccion);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_BOOL, valor, temp);
+        } else {
+            parser.helper.reportSemanticError(
+                "Operador '>=' solo aplicable a tipos numericos, no a '" + 
+                e1.tipo + "' y '" + e2.tipo + "'",
+                e1left + 1, e1right + 1
+            );
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+    | error
+    {:
+        parser.helper.reportSyntaxError("Expresion mal formada.", null);
+        RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null); 
+    :}
+  
+  | LEXICAL_ERROR
+    {:
+        RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+    :}
+
+  ;
