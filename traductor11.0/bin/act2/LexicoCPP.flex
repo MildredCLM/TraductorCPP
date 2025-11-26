@@ -294,10 +294,10 @@ print       {
 /* COMENTARIOS */
 
 "//".*         { 
-                return simbolo(sym.COMENTARIO_LINEA, yytext());
+                /* Ignorar comentario de linea */
             }            
 "/*"([^*]|[\r\n]|"*"[^/])*"*/"         { 
-                return simbolo(sym.COMENTARIO_LINEAS, yytext());
+                /* Ignorar comentario de bloque */
             }
 /* REGLAS TRANSICION */
 \"  \" { 

@@ -1,0 +1,33 @@
+Reading "act2\LexicoCPP.flex"
+Constructing NFA : 476 states in NFA
+Converting NFA to DFA : 
+............................................................................................................................................................................................
+
+Warning in file "act2\LexicoCPP.flex" (line 307): 
+Rule can never be matched:
+ '   { 
+
+Warning in file "act2\LexicoCPP.flex" (line 353): 
+Rule can never be matched:
+    ";" {
+
+Warning in file "act2\LexicoCPP.flex" (line 396): 
+Rule can never be matched:
+    ";" {
+194 states before minimization, 178 states in minimized DFA
+Old file "act2\LexicoCPP.java" saved as "act2\LexicoCPP.java~"
+Writing code to "act2\LexicoCPP.java"
+Opening files...
+Parsing specification from standard input...
+Error : java_cup.runtime.Symbol "lista_argumentos" has already been declared
+Closing files...
+------- CUP v0.11a beta 20060608 Parser Generation Summary -------
+  1 error and 0 warnings
+  76 terminals, 51 non-terminals, and 121 productions declared, 
+  producing 0 unique parse states.
+  0 terminals declared but not used.
+  0 non-terminals declared but not used.
+  0 productions never reduced.
+  0 conflicts detected (0 expected).
+  No code produced.
+---------------------------------------------------- (v0.11a beta 20060608)

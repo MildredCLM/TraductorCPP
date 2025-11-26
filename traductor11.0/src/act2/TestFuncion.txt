@@ -1,0 +1,13 @@
+int suma(int x, int y) {
+    int resultado;
+    resultado = x + y;
+    return resultado;
+}
+
+void main() {
+    int a = 5;
+    int b = 10;
+    int total;
+    total = suma(a, b);
+    print(total);
+}

@@ -1,0 +1,39 @@
+void main() {
+    int x = 0;
+    
+    // IF-ELSE
+    if (x == 0) {
+        print("x es 0");
+    } else {
+        print("x no es 0");
+    }
+    
+    // WHILE
+    int i = 0;
+    while (i < 3) {
+        print(i);
+        i++;
+    }
+    
+    // FOR
+    int j;
+    for (j = 0; j < 3; j++) {
+        if (j == 1) {
+            continue;
+        }
+        print(j);
+    }
+    
+    // SWITCH
+    int k = 2;
+    switch(k) {
+        case 1: 
+            print("Uno"); 
+            break;
+        case 2: 
+            print("Dos"); 
+            break;
+        default: 
+            print("Otro");
+    }
+}

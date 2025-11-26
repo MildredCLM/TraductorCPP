@@ -1,0 +1,66 @@
+CODEGEN: x = 0
+CODEGEN: t1 = x == 0
+CODEGEN: ifFalse t1 goto L1
+CODEGEN: print x es 0
+CODEGEN: goto L2
+CODEGEN: L1:
+CODEGEN: print x no es 0
+CODEGEN: L2:
+CODEGEN: i = 0
+CODEGEN: L3:
+CODEGEN: t2 = i < 3
+CODEGEN: ifFalse t2 goto L4
+CODEGEN: print i
+ERROR SINTACTICO: Token inesperado '++' en l├¡nea 16, columna 11.
+ERROR SINTACTICO: Expresion mal formada..
+CODEGEN: goto L3
+CODEGEN: L4:
+CODEGEN: j = 0
+CODEGEN: L5:
+CODEGEN: t3 = j < 3
+CODEGEN: ifFalse t3 goto L6
+CODEGEN: goto L7
+CODEGEN: L8:
+CODEGEN: j++
+CODEGEN: goto L5
+CODEGEN: L7:
+CODEGEN: t4 = j == 1
+CODEGEN: ifFalse t4 goto L9
+CODEGEN: goto L8
+CODEGEN: L9:
+CODEGEN: print j
+CODEGEN: goto L8
+CODEGEN: L6:
+CODEGEN: k = 2
+CODEGEN: goto L11
+CODEGEN: L12:
+CODEGEN: print Uno
+
+=== TABLA DE SIMBOLOS ===
+CODEGEN: goto L10
+CODEGEN: L13:
+CODEGEN: print Dos
+CODEGEN: goto L10
+CODEGEN: L14:
+CODEGEN: print Otro
+CODEGEN: goto L10
+CODEGEN: L11:
+CODEGEN: if k == 1 goto L12
+if k == 2 goto L13
+
+CODEGEN: goto L14
+CODEGEN: L10:
+Simbolo                   Tipo         Linea    Columna  Alcance                        Valor          
+--------------------------------------------------------------------------------------------------------------
+main                      void         2        7        Global                         -              
+x                         int          3        10       Local(main)                    0              
+i                         int          13       10       Local(main)                    0              
+j                         int          20       10       Local(main)                    0              
+k                         int          29       10       Local(main)                    2              
+--------------------------------------------------------------------------------------------------------------
+
+=== RESULTADOS ===
+Errores semanticos: 0
+Errores sintacticos: 2
+Errores lexicos: 0
+Se encontraron errores en el analisis

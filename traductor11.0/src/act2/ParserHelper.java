@@ -82,6 +82,52 @@ public class ParserHelper {
     public int erroresLex = 0;
     public java.util.List<SymbolInfo> todosLosSimbolos = new java.util.ArrayList<>();
 
+    // === CONTROL DE FLUJO ===
+    private int labelCounter = 0;
+    public Stack<String> breakStack = new Stack<>();
+    public Stack<String> continueStack = new Stack<>();
+    public Stack<SwitchInfo> switchStack = new Stack<>();
+
+    public String nuevaEtiqueta() {
+        return "L" + (++labelCounter);
+    }
+
+    public static class SwitchInfo {
+        public String expr;
+        public String endLabel;
+        public String defaultLabel;
+        public String testLabel;
+        public StringBuilder testCode;
+
+        public SwitchInfo(String expr, String endLabel, String testLabel) {
+            this.expr = expr;
+            this.endLabel = endLabel;
+            this.testLabel = testLabel;
+            this.testCode = new StringBuilder();
+            this.defaultLabel = null;
+        }
+    }
+
+    public static class WhileLabels {
+        public String lStart, lEnd;
+
+        public WhileLabels(String s, String e) {
+            lStart = s;
+            lEnd = e;
+        }
+    }
+
+    public static class ForLabels {
+        public String lCond, lEnd, lBody, lUpdate;
+
+        public ForLabels(String c, String e, String b, String u) {
+            lCond = c;
+            lEnd = e;
+            lBody = b;
+            lUpdate = u;
+        }
+    }
+
     // === CONSTRUCTOR ===
     public ParserHelper() {
         tablaDeSimbolos = new Stack<>();

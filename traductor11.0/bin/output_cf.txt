@@ -1,0 +1,59 @@
+CODEGEN: x = 0
+ERROR SINTACTICO: Token inesperado '// IF-ELSE' en l├¡nea 5, columna 6.
+ERROR SINTACTICO: Expresion mal formada..
+CODEGEN: L1:
+ERROR SEMANTICO: Identificador 'i' no declarado en l├¡nea 14, columna 13.
+CODEGEN: ifFalse  goto L2
+ERROR SEMANTICO: Identificador 'i' no declarado en l├¡nea 15, columna 16.
+CODEGEN: print 
+ERROR SINTACTICO: Token inesperado '++' en l├¡nea 16, columna 11.
+ERROR SINTACTICO: Expresion mal formada..
+ERROR SEMANTICO: Identificador 'j' no declarado en l├¡nea 21, columna 11.
+CODEGEN: L3:
+ERROR SEMANTICO: Identificador 'j' no declarado en l├¡nea 21, columna 18.
+CODEGEN: goto L5
+CODEGEN: L6:
+CODEGEN: j++
+CODEGEN: goto L3
+CODEGEN: L5:
+ERROR SEMANTICO: Identificador 'j' no declarado en l├¡nea 22, columna 14.
+CODEGEN: t1 =  == 1
+CODEGEN: ifFalse t1 goto L7
+CODEGEN: goto L6
+CODEGEN: L7:
+ERROR SEMANTICO: Identificador 'j' no declarado en l├¡nea 25, columna 16.
+CODEGEN: print 
+ERROR SINTACTICO: Token inesperado '// SWITCH' en l├¡nea 28, columna 6.
+ERROR SINTACTICO: Expresion mal formada..
+ERROR SEMANTICO: Identificador 'k' no declarado en l├¡nea 30, columna 13.
+CODEGEN: goto L9
+CODEGEN: L10:
+CODEGEN: print Uno
+CODEGEN: goto L8
+CODEGEN: L11:
+CODEGEN: print Dos
+CODEGEN: goto L8
+CODEGEN: L12:
+CODEGEN: print Otro
+CODEGEN: goto L8
+CODEGEN: L9:
+CODEGEN: if  == 1 goto L10
+if  == 2 goto L11
+
+CODEGEN: goto L12
+CODEGEN: L8:
+ERROR SINTACTICO: Token inesperado en l├¡nea 0, columna 0.
+ERROR SINTACTICO: Error sintactico irrecuperable. Se detendra el analisis de esta estructura en l├¡nea 0, columna 0.
+
+=== TABLA DE SIMBOLOS ===
+Simbolo                   Tipo         Linea    Columna  Alcance                        Valor          
+--------------------------------------------------------------------------------------------------------------
+main                      void         2        7        Global                         -              
+x                         int          3        10       Local(main)                    0              
+--------------------------------------------------------------------------------------------------------------
+
+=== RESULTADOS ===
+Errores semanticos: 7
+Errores sintacticos: 8
+Errores lexicos: 0
+Se encontraron errores en el analisis

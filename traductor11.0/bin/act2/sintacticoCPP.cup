@@ -49,11 +49,20 @@ non terminal sentencia, bloque_sentencias, lista_sentencias;
 non terminal sentencia_if, sentencia_while, sentencia_for, sentencia_return, sentencia_print;
 non terminal sentencia_switch, lista_casos, caso, caso_default;
 non terminal sentencia_asignacion, sentencia_expr;
-non terminal for_init, for_condicion, for_actualizacion, asignacion_expr;
+non terminal for_init, for_actualizacion, asignacion_expr;
+non terminal ParserHelper.ExprResult for_condicion;
 /*non terminal String expresion;*/
 non terminal ParserHelper.ExprResult expresion;
 non terminal java.util.List<ParserHelper.ExprResult> lista_argumentos;
 non terminal java.util.List<ParserHelper.ExprResult> lista_argumentos_no_vacia;
+
+// Control Flow Markers
+non terminal String if_header, else_marker;
+non terminal String while_begin;
+non terminal ParserHelper.WhileLabels while_cond;
+non terminal String for_header;
+non terminal ParserHelper.ForLabels for_cond_part;
+non terminal ParserHelper.SwitchInfo switch_header;
 
 precedence right ASIGNACION;
 precedence left OR;
@@ -213,45 +222,115 @@ sentencia ::=
     | dec_variable
     | sentencia_print
     | BREAK PUNTOYCOMA
+      {:
+          if (!parser.helper.breakStack.isEmpty()) {
+              parser.helper.generarCodigo("goto " + parser.helper.breakStack.peek());
+          } else {
+              parser.helper.reportSemanticError("Break fuera de ciclo o switch", 0, 0);
+          }
+      :}
     | CONTINUE PUNTOYCOMA
+      {:
+          if (!parser.helper.continueStack.isEmpty()) {
+              parser.helper.generarCodigo("goto " + parser.helper.continueStack.peek());
+          } else {
+              parser.helper.reportSemanticError("Continue fuera de ciclo", 0, 0);
+          }
+      :}
+    ;
+
+if_header ::= IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE
+    {:
+        String lFalse = parser.helper.nuevaEtiqueta();
+        parser.helper.generarCodigo("ifFalse " + cond.direccion + " goto " + lFalse);
+        RESULT = lFalse;
+    :}
+    ;
+
+else_marker ::= ELSE
+    {:
+        String lEnd = parser.helper.nuevaEtiqueta();
+        parser.helper.generarCodigo("goto " + lEnd);
+        RESULT = lEnd;
+    :}
     ;
 
 sentencia_if ::=
-    IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia
-    {:
-        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
-            parser.helper.reportSemanticError(
-                "La condicion del 'if' debe ser de tipo booleano, no '" + cond.tipo + "'",
-                condleft + 1, condright + 1
-            );
-        }
-    :}
-  | IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia ELSE sentencia
-    {:
-        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
-            parser.helper.reportSemanticError(
-                "La condicion del 'if' debe ser de tipo booleano, no '" + cond.tipo + "'",
-                condleft + 1, condright + 1
-            );
-        }
-    :}
+    if_header:lFalse sentencia
+    {: parser.helper.generarCodigo(lFalse + ":"); :}
+  | if_header:lFalse sentencia else_marker:lEnd
+    {: parser.helper.generarCodigo(lFalse + ":"); :}
+    sentencia
+    {: parser.helper.generarCodigo(lEnd + ":"); :}
   ;
 
-sentencia_while ::= 
-    WHILE PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE sentencia
+while_begin ::= WHILE
     {:
-        if (!cond.tipo.equals(ParserHelper.T_BOOL) && !cond.tipo.equals(ParserHelper.T_ERROR)) {
-            parser.helper.reportSemanticError(
-                "La condicion del 'while' debe ser de tipo booleano, no '" + cond.tipo + "'",
-                condleft + 1, condright + 1
-            );
-        }
+        String lStart = parser.helper.nuevaEtiqueta();
+        parser.helper.generarCodigo(lStart + ":");
+        RESULT = lStart;
     :}
-  ;
+    ;
 
-sentencia_for ::= 
-    FOR PARENTESIS_APERTURA for_init PUNTOYCOMA for_condicion PUNTOYCOMA 
-    for_actualizacion PARENTESIS_CIERRE sentencia ;
+while_cond ::= while_begin:lStart PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE
+    {:
+        String lEnd = parser.helper.nuevaEtiqueta();
+        parser.helper.generarCodigo("ifFalse " + cond.direccion + " goto " + lEnd);
+        parser.helper.breakStack.push(lEnd);
+        parser.helper.continueStack.push(lStart);
+        RESULT = new ParserHelper.WhileLabels(lStart, lEnd);
+    :}
+    ;
+
+sentencia_while ::= while_cond:labels sentencia
+    {:
+        parser.helper.generarCodigo("goto " + labels.lStart);
+        parser.helper.generarCodigo(labels.lEnd + ":");
+        parser.helper.breakStack.pop();
+        parser.helper.continueStack.pop();
+    :}
+    ;
+
+for_header ::= FOR PARENTESIS_APERTURA for_init PUNTOYCOMA
+    {:
+        String lCond = parser.helper.nuevaEtiqueta();
+        parser.helper.generarCodigo(lCond + ":");
+        RESULT = lCond;
+    :}
+    ;
+
+for_cond_part ::= for_header:lCond for_condicion:cond PUNTOYCOMA
+    {:
+        String lEnd = parser.helper.nuevaEtiqueta();
+        String lBody = parser.helper.nuevaEtiqueta();
+        String lUpdate = parser.helper.nuevaEtiqueta();
+        
+        if (cond != null && cond.direccion != null && !cond.direccion.isEmpty()) {
+             parser.helper.generarCodigo("ifFalse " + cond.direccion + " goto " + lEnd);
+        }
+        parser.helper.generarCodigo("goto " + lBody);
+        parser.helper.generarCodigo(lUpdate + ":");
+        
+        parser.helper.breakStack.push(lEnd);
+        parser.helper.continueStack.push(lUpdate);
+        
+        RESULT = new ParserHelper.ForLabels(lCond, lEnd, lBody, lUpdate);
+    :}
+    ;
+
+sentencia_for ::= for_cond_part:labels for_actualizacion PARENTESIS_CIERRE 
+    {:
+        parser.helper.generarCodigo("goto " + labels.lCond);
+        parser.helper.generarCodigo(labels.lBody + ":");
+    :}
+    sentencia
+    {:
+        parser.helper.generarCodigo("goto " + labels.lUpdate);
+        parser.helper.generarCodigo(labels.lEnd + ":");
+        parser.helper.breakStack.pop();
+        parser.helper.continueStack.pop();
+    :}
+    ;
 
 for_init ::= tipo_dato dec_variable_lista
            | asignacion_expr
@@ -266,8 +345,9 @@ for_condicion ::=
                 condleft + 1, condright + 1
             );
         }
+        RESULT = cond;
     :}
-  | ;
+  | {: RESULT = null; :} ;
 
 for_actualizacion ::= asignacion_expr 
                     | ID:id INCREMENTO {: parser.helper.generarCodigo(id + "++"); :}
@@ -299,39 +379,63 @@ asignacion_expr ::=
 
 sentencia_asignacion ::= asignacion_expr PUNTOYCOMA ;
 
+switch_header ::= SWITCH PARENTESIS_APERTURA expresion:expr PARENTESIS_CIERRE
+    {:
+        String lEnd = parser.helper.nuevaEtiqueta();
+        String lTest = parser.helper.nuevaEtiqueta();
+        parser.helper.generarCodigo("goto " + lTest);
+        
+        ParserHelper.SwitchInfo info = new ParserHelper.SwitchInfo(expr.direccion, lEnd, lTest);
+        parser.helper.switchStack.push(info);
+        parser.helper.breakStack.push(lEnd);
+        RESULT = info;
+    :}
+    ;
+
 sentencia_switch ::=
-    SWITCH PARENTESIS_APERTURA expresion:expr PARENTESIS_CIERRE LLAVE_APERTURA lista_casos:casos LLAVE_CIERRE
+    switch_header:info LLAVE_APERTURA lista_casos:casos LLAVE_CIERRE
     {:    
-        // Validar que la expresion sea de tipo compatible (int, char, bool)
-        if (!expr.tipo.equals(ParserHelper.T_INT) && 
-            !expr.tipo.equals(ParserHelper.T_CHAR) && 
-            !expr.tipo.equals(ParserHelper.T_BOOL) &&
-            !expr.tipo.equals(ParserHelper.T_ERROR)) {
-            parser.helper.reportSemanticError(
-                "La expresion del 'switch' debe ser de tipo int, char o bool, no '" + expr.tipo + "'",
-                exprleft + 1, exprright + 1
-            );
+        parser.helper.generarCodigo("goto " + info.endLabel);
+        parser.helper.generarCodigo(info.testLabel + ":");
+        parser.helper.generarCodigo(info.testCode.toString());
+        if (info.defaultLabel != null) {
+            parser.helper.generarCodigo("goto " + info.defaultLabel);
+        } else {
+            parser.helper.generarCodigo("goto " + info.endLabel);
         }
+        parser.helper.generarCodigo(info.endLabel + ":");
+        
+        parser.helper.switchStack.pop();
+        parser.helper.breakStack.pop();
     :}
   ;
 
 lista_casos ::= lista_casos caso | caso | lista_casos caso_default | caso_default ;
 
 caso ::=
-    CASE expresion:val DOS_PUNTOS bloque_sentencias
-    {:    
-        // Los valores de case deben ser constantes
-        if (val.valor == null) {
-            parser.helper.reportSemanticError(
-                "El valor del 'case' debe ser una constante, no una expresion compleja",
-                valleft + 1, valright + 1
-            );
+    CASE expresion:val DOS_PUNTOS 
+    {:
+        String lCase = parser.helper.nuevaEtiqueta();
+        parser.helper.generarCodigo(lCase + ":");
+        if (!parser.helper.switchStack.isEmpty()) {
+            ParserHelper.SwitchInfo info = parser.helper.switchStack.peek();
+            info.testCode.append("if " + info.expr + " == " + val.valor + " goto " + lCase + "\n");
         }
     :}
+    bloque_sentencias
   ;
 
 caso_default ::=
-    DEFAULT DOS_PUNTOS bloque_sentencias
+    DEFAULT DOS_PUNTOS 
+    {:
+        String lDef = parser.helper.nuevaEtiqueta();
+        parser.helper.generarCodigo(lDef + ":");
+        if (!parser.helper.switchStack.isEmpty()) {
+            ParserHelper.SwitchInfo info = parser.helper.switchStack.peek();
+            info.defaultLabel = lDef;
+        }
+    :}
+    bloque_sentencias
   ;
 
 sentencia_return ::=
@@ -379,7 +483,25 @@ expresion ::=
 | ID:id_name PARENTESIS_APERTURA lista_argumentos:args PARENTESIS_CIERRE
     {:
         String tipoRetorno = parser.helper.validarLlamadaFuncion(id_name, args, id_nameleft + 1, id_nameright + 1);
-        RESULT = new ParserHelper.ExprResult(tipoRetorno, null);
+        
+        // Generar codigo para llamada a funcion
+        // 1. Push de parametros en orden inverso
+        for (int i = args.size() - 1; i >= 0; i--) {
+            parser.helper.generarCodigo("push " + args.get(i).direccion);
+        }
+        
+        // 2. Call a la funcion
+        parser.helper.generarCodigo("call " + id_name + ", " + args.size());
+        
+        // 3. Si retorna algo (no void), guardar en temporal
+        String direccion = "";
+        if (!tipoRetorno.equals(ParserHelper.T_VOID) && !tipoRetorno.equals(ParserHelper.T_ERROR)) {
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = return_value");
+            direccion = temp;
+        }
+        
+        RESULT = new ParserHelper.ExprResult(tipoRetorno, null, direccion);
     :}
   
   | ID:id_name
@@ -709,7 +831,36 @@ expresion ::=
             RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
         }
     :}
-    | error
+
+  | ID:id INCREMENTO
+    {:
+        String t = parser.helper.tipoDe(id);
+        if (parser.helper.esNumerico(t)) {
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + id);
+            parser.helper.generarCodigo(id + " = " + id + " + 1");
+            RESULT = new ParserHelper.ExprResult(t, null, temp);
+        } else {
+            parser.helper.reportSemanticError("Incremento solo para numericos", idleft+1, idright+1);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+  
+  | ID:id DECREMENTO
+    {:
+        String t = parser.helper.tipoDe(id);
+        if (parser.helper.esNumerico(t)) {
+            String temp = parser.helper.nuevaTemporal();
+            parser.helper.generarCodigo(temp + " = " + id);
+            parser.helper.generarCodigo(id + " = " + id + " - 1");
+            RESULT = new ParserHelper.ExprResult(t, null, temp);
+        } else {
+            parser.helper.reportSemanticError("Decremento solo para numericos", idleft+1, idright+1);
+            RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null);
+        }
+    :}
+
+  | error
     {:
         parser.helper.reportSyntaxError("Expresion mal formada.", null);
         RESULT = new ParserHelper.ExprResult(ParserHelper.T_ERROR, null); 

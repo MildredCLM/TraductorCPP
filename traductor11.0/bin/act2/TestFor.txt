@@ -1,0 +1,9 @@
+void main() {
+    int j;
+    for (j = 0; j < 3; j++) {
+        if (j == 1) {
+            continue;
+        }
+        print(j);
+    }
+}

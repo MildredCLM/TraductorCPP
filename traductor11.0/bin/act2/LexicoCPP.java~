@@ -1013,7 +1013,7 @@ public class LexicoCPP implements java_cup.runtime.Scanner {
             }
           case 115: break;
           case 40: 
-            { return simbolo(sym.COMENTARIO_LINEA, yytext());
+            { /* Ignorar comentario de linea */
             }
           case 116: break;
           case 41: 
@@ -1093,7 +1093,7 @@ public class LexicoCPP implements java_cup.runtime.Scanner {
             }
           case 135: break;
           case 60: 
-            { return simbolo(sym.COMENTARIO_LINEAS, yytext());
+            { /* Ignorar comentario de bloque */
             }
           case 136: break;
           case 61: 

@@ -1,0 +1,352 @@
+Reading "act2\LexicoCPP.flex"
+Constructing NFA : 476 states in NFA
+Converting NFA to DFA : 
+............................................................................................................................................................................................
+
+Warning in file "act2\LexicoCPP.flex" (line 307): 
+Rule can never be matched:
+ '   { 
+
+Warning in file "act2\LexicoCPP.flex" (line 353): 
+Rule can never be matched:
+    ";" {
+
+Warning in file "act2\LexicoCPP.flex" (line 396): 
+Rule can never be matched:
+    ";" {
+194 states before minimization, 178 states in minimized DFA
+Old file "act2\LexicoCPP.java" saved as "act2\LexicoCPP.java~"
+Writing code to "act2\LexicoCPP.java"
+Opening files...
+Parsing specification from standard input...
+Checking specification...
+Warning : Terminal "COMENTARIO_LINEAS" was declared but never used
+Warning : Terminal "COMENTARIO_LINEA" was declared but never used
+Warning : Terminal "CORCHETE_APERTURA" was declared but never used
+Warning : Terminal "CATCH" was declared but never used
+Warning : Terminal "DOUBLE" was declared but never used
+Warning : Terminal "PROTECTED" was declared but never used
+Warning : Terminal "ERROR" was declared but never used
+Warning : Terminal "LONG" was declared but never used
+Warning : Terminal "QUESTION" was declared but never used
+Warning : Terminal "DO" was declared but never used
+Warning : Terminal "PUBLIC" was declared but never used
+Warning : Terminal "A_MULTIPLICACION" was declared but never used
+Warning : Terminal "TRY" was declared but never used
+Warning : Terminal "NULL" was declared but never used
+Warning : Terminal "PUNTO" was declared but never used
+Warning : Terminal "THIS" was declared but never used
+Warning : Terminal "A_MODULO" was declared but never used
+Warning : Terminal "IFX" was declared but never used
+Warning : Terminal "NEW" was declared but never used
+Warning : Terminal "A_DIVISION" was declared but never used
+Warning : Terminal "CORCHETE_CIERRE" was declared but never used
+Warning : Terminal "PRIVATE" was declared but never used
+Warning : Terminal "STATIC" was declared but never used
+Warning : Terminal "A_RESTA" was declared but never used
+Warning : Terminal "A_SUMA" was declared but never used
+Building parse tables...
+  Computing non-terminal nullability...
+  Computing first sets...
+  Building state machine...
+  Filling in tables...
+Warning : *** Reduce/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  and     sentencia ::= sentencia_print (*) 
+  under symbols: {error, IF, ELSE, WHILE, FOR, SWITCH, CASE, DEFAULT, BREAK, CONTINUE, RETURN, PRINT, INT, FLOAT, BOOL, CHAR, STRING, BOOLEAN, NOT, PARENTESIS_APERTURA, LLAVE_APERTURA, LLAVE_CIERRE, ID, ENTERO, DECIMAL, LITERAL_CADENA, LITERAL_CARACTER, LEXICAL_ERROR}
+  Resolved in favor of the second production.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol error
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol IF
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol ELSE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol WHILE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol FOR
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol SWITCH
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol CASE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol DEFAULT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol BREAK
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol CONTINUE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol RETURN
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol PRINT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol INT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol FLOAT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol BOOL
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol CHAR
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol STRING
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol BOOLEAN
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol NOT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol PARENTESIS_APERTURA
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LLAVE_APERTURA
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LLAVE_CIERRE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol ID
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol ENTERO
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol DECIMAL
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LITERAL_CADENA
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LITERAL_CARACTER
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LEXICAL_ERROR
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol error
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol IF
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol ELSE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol WHILE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol FOR
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol SWITCH
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol CASE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol DEFAULT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol BREAK
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol CONTINUE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol RETURN
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol PRINT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol INT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol FLOAT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol BOOL
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol CHAR
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol STRING
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol BOOLEAN
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol NOT
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol PARENTESIS_APERTURA
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LLAVE_APERTURA
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LLAVE_CIERRE
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol ID
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol ENTERO
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol DECIMAL
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LITERAL_CADENA
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LITERAL_CARACTER
+  Resolved in favor of shifting.
+
+Warning : *** Shift/Reduce conflict found in state #96
+  between sentencia ::= sentencia_print (*) 
+  under symbol LEXICAL_ERROR
+  Resolved in favor of shifting.
+
+  Checking for non-reduced productions...
+Warning : *** Production "sentencia ::= sentencia_print " never reduced
+Error : *** More conflicts encountered than expected -- parser generation aborted
+Closing files...
+------- CUP v0.11a beta 20060608 Parser Generation Summary -------
+  1 error and 83 warnings
+  76 terminals, 51 non-terminals, and 121 productions declared, 
+  producing 204 unique parse states.
+  25 terminals declared but not used.
+  0 non-terminals declared but not used.
+  0 productions never reduced.
+  57 conflicts detected (0 expected).
+  No code produced.
+---------------------------------------------------- (v0.11a beta 20060608)
