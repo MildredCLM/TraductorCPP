@@ -1,54 +1,101 @@
-int var_global_int = 10;
-float var_global_float = 5.5;
-bool var_global_bool = true;
-string var_global_string = "hola";
-char var_global_char = 'A';
+// int comentario = 5;
+void main() {
 
-int sumar(int a, int b) {
-    return a + b;
-}
+    int n1 = 50;
+    int n2 = 25;
+    int n3 = 75;
 
-void imprimir(string msg) {
-    
-}
-
-bool esMayor(int a, int b) {
-    return a > b;
-}
+    int mayor;
+    int medio;
+    int menor;
 
 
-void prueba_sintaxis_correcta() {
-    if (var_global_bool) {
-        int x = 1;
+    if (n1 >= n2 && n1 >= n3) {
+        mayor = n1;
+        if (n2 >= n3) {
+            medio = n2;
+            menor = n3;
+        } else {
+            medio = n3;
+            menor = n2;
+        }
     } else {
-        int y = 2;
+        if (n2 >= n1 && n2 >= n3) {
+            mayor = n2;
+            if (n1 >= n3) {
+                medio = n1;
+                menor = n3;
+            } else {
+                medio = n3;
+                menor = n1;
+            }
+        } else {
+            mayor = n3;
+            if (n1 >= n2) {
+                medio = n1;
+                menor = n2;
+            } else {
+                medio = n2;
+                menor = n1;
+            }
+        }
     }
 
-    while (var_global_int > 0) {
-        var_global_int = var_global_int - 1;
+    printf("--- RESULTADO COMPARADOR ---");
+    printf("Mayor:");
+    printf(mayor);
+    printf("Medio:");
+    printf(medio);
+    printf("Menor:");
+    printf(menor);
+
+ 
+    int dia = 3;
+
+    printf(" DIA DE LA SEMANA ");
+    printf(dia);
+    
+    string l = "sh";
+
+    switch(dia) {
+        case 1: 
+            l = "Lunes";
+            break;
+        case 2: 
+            l="Martes";
+            break;
+        case 3: 
+            l="Miercoles";
+            break;
+        case 4: 
+            l= "Jueves";
+            break;
+        case 5: 
+            l= "Viernes";
+            break;
+        case 6: 
+            l="Sabado";
+            break;
+        case 7: 
+            l="Domingo";
+            break;
+        default: 
+            printf("Dia invalido");
     }
 
-    for (int i = 0; i < 10; i = i + 1) {
-        int k = 1;
+
+    int suma = 0;
+    int i;
+
+    for (i = 1; i <= 10; i++) {
+        suma = suma + i;
     }
+
+    printf("--- SUMATORIA DEL 1 AL 10 ---");
+    printf("Resultado:");
+    printf(suma);
 }
 
-void prueba_switch() {
-int x= 0;
-int y = 0;
-int z = 0;
-int w = 0;
-    
-    int opcion = 2;
-    
-    switch (opcion) {
-        case 1:
-            x = 10;
-        case 2:
-            y = 20;
-        case 3:
-            z = 30;
-        default:
-            w = 0;
-    }
+int sumaf(int a, int b) {
+    return a + b;
 }

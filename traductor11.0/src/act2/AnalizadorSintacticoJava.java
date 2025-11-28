@@ -24,6 +24,8 @@ public class AnalizadorSintacticoJava {
             parser.parse();
             parser.helper.imprimirTablaSimbolos();
 
+            parser.helper.imprimirLogEstructuras();
+
             // Acceder a los errores desde el helper
             System.out.println("\n=== RESULTADOS ===");
             System.out.println("Errores semanticos: " + parser.helper.erroresSem);

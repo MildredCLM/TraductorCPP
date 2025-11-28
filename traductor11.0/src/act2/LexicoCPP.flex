@@ -165,7 +165,7 @@ case      {
 default       { 
                 return simbolo(sym.DEFAULT, yytext());
             }         
-print       { 
+printf       { 
                 return simbolo(sym.PRINT, yytext());
             }
 
@@ -294,7 +294,10 @@ print       {
 /* COMENTARIOS */
 
 "//".*         { 
-                /* Ignorar comentario de linea */
+                /* Ignorar comentario de linea pero reportarlo */
+                if (helper != null) {
+                    helper.registrarEstructura("Comentario de linea detectado", yyline + 1);
+                }
             }            
 "/*"([^*]|[\r\n]|"*"[^/])*"*/"         { 
                 /* Ignorar comentario de bloque */

@@ -103,6 +103,7 @@ dec_funcion ::=
     {:
         // Registramos la funcion antes de procesar los parámetros
         RESULT = parser.helper.registrarFuncion(id_name, t, id_nameleft + 1, id_nameright + 1);
+        parser.helper.registrarEstructura("Declaración de función '" + id_name + "' (tipo " + t + ")", id_nameleft + 1);
         parser.helper.alcanceActual = "local_" + id_name;
         parser.helper.tipoFuncionActual = t;
         parser.helper.iniciarAmbito();
@@ -120,6 +121,7 @@ dec_funcion ::=
     {:
         // Registramos la funcion antes de procesar los parámetros
         RESULT = parser.helper.registrarFuncion(id_name, ParserHelper.T_VOID, id_nameleft + 1, id_nameright + 1);
+        parser.helper.registrarEstructura("Declaración de función '" + id_name + "' (tipo " + ParserHelper.T_VOID + ")", id_nameleft + 1);
         parser.helper.alcanceActual = "local_" + id_name;
         parser.helper.tipoFuncionActual = ParserHelper.T_VOID;
         parser.helper.iniciarAmbito();
@@ -239,18 +241,20 @@ sentencia ::=
       :}
     ;
 
-if_header ::= IF PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE
+if_header ::= IF:i PARENTESIS_APERTURA expresion:cond PARENTESIS_CIERRE
     {:
         String lFalse = parser.helper.nuevaEtiqueta();
         parser.helper.generarCodigo("ifFalse " + cond.direccion + " goto " + lFalse);
+        parser.helper.registrarEstructura("Estructura IF detectada", ileft + 1);
         RESULT = lFalse;
     :}
     ;
 
-else_marker ::= ELSE
+else_marker ::= ELSE:e
     {:
         String lEnd = parser.helper.nuevaEtiqueta();
         parser.helper.generarCodigo("goto " + lEnd);
+        parser.helper.registrarEstructura("Estructura ELSE detectada", eleft + 1);
         RESULT = lEnd;
     :}
     ;
@@ -264,10 +268,11 @@ sentencia_if ::=
     {: parser.helper.generarCodigo(lEnd + ":"); :}
   ;
 
-while_begin ::= WHILE
+while_begin ::= WHILE:w
     {:
         String lStart = parser.helper.nuevaEtiqueta();
         parser.helper.generarCodigo(lStart + ":");
+        parser.helper.registrarEstructura("Ciclo WHILE detectado", wleft + 1);
         RESULT = lStart;
     :}
     ;
@@ -291,9 +296,10 @@ sentencia_while ::= while_cond:labels sentencia
     :}
     ;
 
-for_header ::= FOR PARENTESIS_APERTURA for_init PUNTOYCOMA
+for_header ::= FOR:f PARENTESIS_APERTURA for_init PUNTOYCOMA
     {:
         String lCond = parser.helper.nuevaEtiqueta();
+        parser.helper.registrarEstructura("Ciclo FOR detectado", fleft + 1);
         parser.helper.generarCodigo(lCond + ":");
         RESULT = lCond;
     :}
@@ -379,7 +385,7 @@ asignacion_expr ::=
 
 sentencia_asignacion ::= asignacion_expr PUNTOYCOMA ;
 
-switch_header ::= SWITCH PARENTESIS_APERTURA expresion:expr PARENTESIS_CIERRE
+switch_header ::= SWITCH:s PARENTESIS_APERTURA expresion:expr PARENTESIS_CIERRE
     {:
         String lEnd = parser.helper.nuevaEtiqueta();
         String lTest = parser.helper.nuevaEtiqueta();
@@ -389,6 +395,7 @@ switch_header ::= SWITCH PARENTESIS_APERTURA expresion:expr PARENTESIS_CIERRE
         parser.helper.switchStack.push(info);
         parser.helper.breakStack.push(lEnd);
         RESULT = info;
+        parser.helper.registrarEstructura("Estructura SWITCH detectada", sleft + 1);
     :}
     ;
 
@@ -470,7 +477,7 @@ sentencia_expr ::= expresion PUNTOYCOMA ;
 
 sentencia_print ::= PRINT PARENTESIS_APERTURA expresion:e PARENTESIS_CIERRE PUNTOYCOMA
     {:
-        parser.helper.generarCodigo("print " + e.direccion);
+        parser.helper.generarCodigo("printf " + e.direccion);
     :}
     ;
 

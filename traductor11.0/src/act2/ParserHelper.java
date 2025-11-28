@@ -45,6 +45,10 @@ public class ParserHelper {
         System.err.println("CODEGEN: " + codigo);
     }
 
+    public void registrarEstructura(String mensaje, int linea) {
+        logEstructuras.add("Línea " + linea + ": " + mensaje);
+    }
+
     // === CLASE PARA INFORMACION DE SIMBOLOS ===
     public static class SymbolInfo {
         public String tipo, alcance, nombre;
@@ -81,6 +85,7 @@ public class ParserHelper {
     public int erroresSint = 0;
     public int erroresLex = 0;
     public java.util.List<SymbolInfo> todosLosSimbolos = new java.util.ArrayList<>();
+    public java.util.List<String> logEstructuras = new java.util.ArrayList<>();
 
     // === CONTROL DE FLUJO ===
     private int labelCounter = 0;
@@ -477,5 +482,13 @@ public class ParserHelper {
         }
 
         return "unknown";
+    }
+
+    public void imprimirLogEstructuras() {
+        System.out.println("\n=== ESTRUCTURAS IDENTIFICADAS ===");
+        for (String msg : logEstructuras) {
+            System.out.println(" -> " + msg);
+        }
+        System.out.println("=================================\n");
     }
 }

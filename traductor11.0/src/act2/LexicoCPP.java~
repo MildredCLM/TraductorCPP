@@ -75,12 +75,12 @@ public class LexicoCPP implements java_cup.runtime.Scanner {
     "\1\63\14\4\1\64\6\4\1\0\1\65\1\4\1\66"+
     "\1\4\1\67\4\4\1\70\2\4\1\71\4\4\1\72"+
     "\1\4\1\73\3\4\1\74\1\4\1\75\3\4\1\76"+
-    "\1\77\2\4\1\100\2\4\1\101\2\4\1\102\1\103"+
-    "\1\104\1\105\1\106\3\4\1\107\1\4\1\110\1\4"+
+    "\1\77\5\4\1\100\2\4\1\101\1\102\1\103\1\104"+
+    "\1\105\2\4\1\106\1\4\1\107\1\4\1\110\1\4"+
     "\1\111\1\4\1\112\1\113\1\4\1\114";
 
   private static int [] zzUnpackAction() {
-    int [] result = new int[178];
+    int [] result = new int[179];
     int offset = 0;
     offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
     return result;
@@ -124,13 +124,13 @@ public class LexicoCPP implements java_cup.runtime.Scanner {
     "\0\u1248\0\u127c\0\u01a0\0\u12b0\0\u12e4\0\u01a0\0\u1318\0\u134c"+
     "\0\u1380\0\u13b4\0\u01a0\0\u13e8\0\u01a0\0\u141c\0\u1450\0\u1484"+
     "\0\234\0\u14b8\0\u01a0\0\u14ec\0\u1520\0\u1554\0\u01a0\0\u01a0"+
-    "\0\u1588\0\u15bc\0\u01a0\0\u15f0\0\u1624\0\u01a0\0\u1658\0\u168c"+
-    "\0\u01a0\0\u01a0\0\u01a0\0\u01a0\0\u01a0\0\u16c0\0\u16f4\0\u1728"+
-    "\0\u01a0\0\u175c\0\u01a0\0\u1790\0\u01a0\0\u17c4\0\u01a0\0\u01a0"+
-    "\0\u17f8\0\u01a0";
+    "\0\u1588\0\u15bc\0\u15f0\0\u1624\0\u1658\0\u01a0\0\u168c\0\u16c0"+
+    "\0\u01a0\0\u01a0\0\u01a0\0\u01a0\0\u01a0\0\u16f4\0\u1728\0\u01a0"+
+    "\0\u175c\0\u01a0\0\u1790\0\u01a0\0\u17c4\0\u01a0\0\u17f8\0\u01a0"+
+    "\0\u01a0\0\u182c\0\u01a0";
 
   private static int [] zzUnpackRowMap() {
-    int [] result = new int[178];
+    int [] result = new int[179];
     int offset = 0;
     offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
     return result;
@@ -275,23 +275,24 @@ public class LexicoCPP implements java_cup.runtime.Scanner {
     "\1\0\11\11\1\245\3\11\30\0\1\11\2\0\1\11"+
     "\1\0\11\11\1\0\7\11\1\246\5\11\30\0\1\11"+
     "\2\0\1\11\1\0\1\247\10\11\1\0\15\11\30\0"+
-    "\1\11\2\0\1\11\1\0\11\11\1\0\1\250\14\11"+
-    "\30\0\1\11\2\0\1\11\1\0\11\11\1\0\1\251"+
-    "\14\11\30\0\1\11\2\0\1\11\1\0\6\11\1\252"+
-    "\2\11\1\0\15\11\30\0\1\11\2\0\1\11\1\0"+
-    "\3\11\1\253\5\11\1\0\15\11\30\0\1\11\2\0"+
-    "\1\11\1\0\2\11\1\254\6\11\1\0\15\11\30\0"+
-    "\1\11\2\0\1\11\1\0\3\11\1\255\5\11\1\0"+
-    "\15\11\30\0\1\11\2\0\1\11\1\0\1\256\10\11"+
-    "\1\0\15\11\30\0\1\11\2\0\1\11\1\0\1\257"+
-    "\10\11\1\0\15\11\30\0\1\11\2\0\1\11\1\0"+
-    "\3\11\1\260\5\11\1\0\15\11\30\0\1\11\2\0"+
+    "\1\11\2\0\1\11\1\0\4\11\1\250\4\11\1\0"+
+    "\15\11\30\0\1\11\2\0\1\11\1\0\11\11\1\0"+
+    "\1\251\14\11\30\0\1\11\2\0\1\11\1\0\11\11"+
+    "\1\0\1\252\14\11\30\0\1\11\2\0\1\11\1\0"+
+    "\6\11\1\253\2\11\1\0\15\11\30\0\1\11\2\0"+
+    "\1\11\1\0\3\11\1\254\5\11\1\0\15\11\30\0"+
+    "\1\11\2\0\1\11\1\0\2\11\1\255\6\11\1\0"+
+    "\15\11\30\0\1\11\2\0\1\11\1\0\3\11\1\256"+
+    "\5\11\1\0\15\11\30\0\1\11\2\0\1\11\1\0"+
+    "\1\257\10\11\1\0\15\11\30\0\1\11\2\0\1\11"+
+    "\1\0\1\260\10\11\1\0\15\11\30\0\1\11\2\0"+
     "\1\11\1\0\3\11\1\261\5\11\1\0\15\11\30\0"+
-    "\1\11\2\0\1\11\1\0\11\11\1\0\6\11\1\262"+
-    "\6\11\30\0\1\11";
+    "\1\11\2\0\1\11\1\0\3\11\1\262\5\11\1\0"+
+    "\15\11\30\0\1\11\2\0\1\11\1\0\11\11\1\0"+
+    "\6\11\1\263\6\11\30\0\1\11";
 
   private static int [] zzUnpackTrans() {
-    int [] result = new int[6188];
+    int [] result = new int[6240];
     int offset = 0;
     offset = zzUnpackTrans(ZZ_TRANS_PACKED_0, offset, result);
     return result;
@@ -332,10 +333,10 @@ public class LexicoCPP implements java_cup.runtime.Scanner {
     "\3\0\1\11\21\1\6\11\1\1\4\11\13\1\2\11"+
     "\1\0\3\11\1\0\1\11\1\1\1\11\31\1\4\11"+
     "\1\0\1\1\10\11\1\0\33\1\1\0\27\1\1\11"+
-    "\41\1";
+    "\42\1";
 
   private static int [] zzUnpackAttribute() {
-    int [] result = new int[178];
+    int [] result = new int[179];
     int offset = 0;
     offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
     return result;
@@ -826,13 +827,13 @@ public class LexicoCPP implements java_cup.runtime.Scanner {
         yybegin(YYINITIAL);
         return simbolo(sym.LEXICAL_ERROR, stringBuilder.toString());
             }
-            case 179: break;
+            case 180: break;
             case CHAR_STATE: {
               error("Caracter sin cierre al final del archivo en linea " + stringStartLine);
         yybegin(YYINITIAL);
         return simbolo(sym.LEXICAL_ERROR, stringBuilder.toString());
             }
-            case 180: break;
+            case 181: break;
             default:
           { return new java_cup.runtime.Symbol(sym.EOF); }
         }
@@ -1109,31 +1110,31 @@ public class LexicoCPP implements java_cup.runtime.Scanner {
             }
           case 139: break;
           case 64: 
-            { return simbolo(sym.PRINT, yytext());
+            { return simbolo(sym.BREAK, yytext());
             }
           case 140: break;
           case 65: 
-            { return simbolo(sym.BREAK, yytext());
+            { return simbolo(sym.WHILE, yytext());
             }
           case 141: break;
           case 66: 
-            { return simbolo(sym.WHILE, yytext());
+            { return simbolo(sym.RETURN, yytext());
             }
           case 142: break;
           case 67: 
-            { return simbolo(sym.RETURN, yytext());
+            { return simbolo(sym.STRING, yytext());
             }
           case 143: break;
           case 68: 
-            { return simbolo(sym.STRING, yytext());
+            { return simbolo(sym.STATIC, yytext());
             }
           case 144: break;
           case 69: 
-            { return simbolo(sym.STATIC, yytext());
+            { return simbolo(sym.SWITCH, yytext());
             }
           case 145: break;
           case 70: 
-            { return simbolo(sym.SWITCH, yytext());
+            { return simbolo(sym.PRINT, yytext());
             }
           case 146: break;
           case 71: 

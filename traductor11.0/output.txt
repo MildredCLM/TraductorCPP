@@ -1,0 +1,17 @@
+
+=== ESTRUCTURAS IDENTIFICADAS ===
+-> Línea 2: Declaración de función 'main' (tipo void)
+
+=== TABLA DE SIMBOLOS ===
+Simbolo                   Tipo         Linea    Columna  Alcance                        Valor          
+--------------------------------------------------------------------------------------------------------------
+main                      void         2        7        Global                         -              
+dia                       int          3        10       Local(main)                    3              
+l                         string       4        13       Local(main)                    sh             
+--------------------------------------------------------------------------------------------------------------
+
+=== RESULTADOS ===
+Errores semanticos: 1
+Errores sintacticos: 4
+Errores lexicos: 0
+Se encontraron errores en el analisis
